@@ -152,7 +152,7 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 
     struct timeval temp_timeout = timeout;
 
-    Debug( 3, "selecting for  %d secs %d usecs, want %d bytes", temp_timeout.tv_sec, temp_timeout.tv_usec, bytes_expected );
+    Debug( 4, "selecting for %d secs %d usecs, want %d bytes", temp_timeout.tv_sec, temp_timeout.tv_usec, bytes_expected );
     int n_found = select( sd+1, &rfds, NULL, NULL, &temp_timeout );
     if( n_found == 0 )
     {

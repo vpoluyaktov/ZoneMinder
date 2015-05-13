@@ -1193,6 +1193,7 @@ bool Monitor::Analyse()
         int step = 1;
         if ( read_margin > 0 )
         {
+			// Where to the 9 and 5 come from?
             step = (9*image_buffer_count)/(5*read_margin);
         }
 
@@ -4276,7 +4277,7 @@ void MonitorStream::runStream()
         }
         if ( (TV_2_FLOAT( now ) - last_frame_sent) > max_secs_since_last_sent_frame )
         {
-            Error( "Terminating, last frame sent time %f secs more than maximum of %f", TV_2_FLOAT( now ) - last_frame_sent, max_secs_since_last_sent_frame );
+            Error( "Terminating, last frame sent time %d, %f secs more than maximum of %f", now.tv_sec, TV_2_FLOAT( now ) - last_frame_sent, max_secs_since_last_sent_frame );
             break;
         }
     }

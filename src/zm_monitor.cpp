@@ -1193,6 +1193,7 @@ bool Monitor::Analyse()
         int step = 1;
         if ( read_margin > 0 )
         {
+			// Where to the 9 and 5 come from?
             step = (9*image_buffer_count)/(5*read_margin);
         }
 

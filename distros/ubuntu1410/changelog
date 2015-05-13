@@ -1,3 +1,15 @@
+zoneminder (1.29.0-vivid-31) vivid; urgency=medium
+
+  * split window sizes into separate js + master merge.
+
+ -- Isaac Connor <iconnor@connortechnology.com>  Fri, 01 May 2015 16:16:51 -0400
+
+zoneminder (1.29.0-vivid-30) vivid; urgency=medium
+
+  * merge h264 video
+
+ -- Isaac Connor <iconnor@connortechnology.com>  Tue, 28 Apr 2015 11:54:08 -0400
+
 zoneminder (1.29.0-trusty-29) trusty; urgency=medium
 
   * merge master

@@ -142,9 +142,10 @@ MAIN: while( $loop ) {
         Fatal("ZM_AUDIT_MIN_AGE is not set in config.");
     }
 
-	my %db_events;
+	# This hash stores the ages of events inddxed first my monitor_id, then by event_id
+	my %event_ages;
 
-    my $db_monitors;
+    my %db_monitors;
     my $monitorSelectSql = "select Id,ServerHost from Monitors order by Id";
     my $monitorSelectSth = $dbh->prepare_cached( $monitorSelectSql )
         or Fatal( "Can't prepare '$monitorSelectSql': ".$dbh->errstr() );
@@ -158,43 +159,36 @@ MAIN: while( $loop ) {
 
     $cleaned = 0;
 	my $res = $monitorSelectSth->execute( ) or Fatal( "Can't execute: ".$monitorSelectSth->errstr() );
-    while( my $monitor = $monitorSelectSth->fetchrow_hashref() )
-    {
-        Debug( "Found database monitor '$monitor->{Id}'" );
-        my $db_events = {};
-		$db_monitors->{$monitor->{Id}} = $monitor;
+    while( my $monitor = $monitorSelectSth->fetchrow_hashref() ) {
+		$db_monitors{$$monitor{Id}} = $monitor;
 		if ( $Config{ZM_SERVER_HOST} ) {
-			if ( $db_monitors->{$monitor->{Id}}->{ServerHost} ne $Config{ZM_SERVER_HOST} ) {
-				Debug( "Skipping since it has handled by " . $db_monitors->{$monitor->{Id}}->{ServerHost} . "\n" );
+			if ( $db_monitors{$$monitor{Id}}->{ServerHost} ne $Config{ZM_SERVER_HOST} ) {
+				Debug( "Skipping monitor $$monitor{Id} since it is handled by " . $db_monitors{$$monitor{Id}}->{ServerHost} . "\n" );
 				next;
 			} # end if same serverhost
 		} # end if  there is a defined serverhost
-        my $res = $eventSelectSth->execute( $monitor->{Id} ) or Fatal( "Can't execute: ".$eventSelectSth->errstr() );
-        while ( my $event = $eventSelectSth->fetchrow_hashref() )
-        {
-            $db_events->{$event->{Id}} = $event->{Age};
-        }
-		$db_events{$monitor->{Id}} = $db_events;
-        Debug( "Got ".int(keys(%$db_events))." events\n" );
-    }
+        my $res = $eventSelectSth->execute( $$monitor{Id} ) or Fatal( "Can't execute: ".$eventSelectSth->errstr() );
+		$event_ages{$$monitor{Id}} = { map { @{$_} } @{ $eventSelectSth->fetchall_arrayref() } };
+        Debug( "Got ".int(keys(%{$event_ages{$monitor->{Id}}}))." events for Monitor $$monitor{Id}\n" );
+    } # end each monitor
+    while ( my ( $monitor_id, $monitor ) = each(%db_monitors) ) {
+        Debug( "Dump $$monitor{ServerHost} for Monitor $monitor_id\n" );
+    } # end foreach monitor_id
 
-    my $fs_monitors;
-    foreach my $monitor ( glob("[0-9]*") )
-    {
-        Debug( "Found filesystem monitor '$monitor'" );
+    my %fs_monitors;
+    foreach my $monitor_id ( glob("[0-9]*") ) {
+        Debug( "Found filesystem monitor '$monitor_id'" );
+        my $fs_events = $fs_monitors{$monitor_id} = {};
 		if ( $Config{ZM_SERVER_HOST} ) {
-			if ( $db_monitors->{$monitor}->{ServerHost} ne $Config{ZM_SERVER_HOST} ) {
-				Debug( "Skipping since it has handled by " . $db_monitors->{$monitor}->{ServerHost} . "\n" );
+			if ( $db_monitors{$monitor_id}->{ServerHost} ne $Config{ZM_SERVER_HOST} ) {
+				Debug( "Skipping monitor $monitor_id since it has handled by " . $db_monitors{$monitor_id}->{ServerHost} . "\n" );
 				next;
 			} # end if same serverhost
 		} # end if  there is a defined serverhost
-        my $fs_events = $fs_monitors->{$monitor} = {};
-        ( my $monitor_dir ) = ( $monitor =~ /^(.*)$/ ); # De-taint
+        ( my $monitor_dir ) = ( $monitor_id =~ /^(.*)$/ ); # De-taint
 
-        if ( $Config{ZM_USE_DEEP_STORAGE} )
-        {
-            foreach my $day_dir ( glob("$monitor_dir/*/*/*") )
-            {
+        if ( $Config{ZM_USE_DEEP_STORAGE} ) {
+            foreach my $day_dir ( glob("$monitor_dir/*/*/*") ) {
                 Debug( "Checking $day_dir" );
                 ( $day_dir ) = ( $day_dir =~ /^(.*)$/ ); # De-taint
                 chdir( $day_dir );
@@ -203,90 +197,76 @@ MAIN: while( $loop ) {
                 my @event_links = sort { $b <=> $a } grep { -l $_ } readdir( DIR );
                 closedir( DIR );
                 my $count = 0;
-                foreach my $event_link ( @event_links )
-                {
+                foreach my $event_link ( @event_links ) {
                     Debug( "Checking link $event_link" );
                     ( my $event = $event_link ) =~ s/^.*\.//;
                     my $event_path = readlink( $event_link );
-                    if ( $count++ > MAX_AGED_DIRS )
-                    {
+                    if ( $count++ > MAX_AGED_DIRS ) {
                         $fs_events->{$event} = -1;
-                    }
-                    else
-                    {
-                        if ( !-e $event_path )
-                        {
+                    } else {
+                        if ( !-e $event_path ) {
                             aud_print( "Event link $day_dir/$event_link does not point to valid target" );
-                            if ( confirm() )
-                            {
+                            if ( confirm() ) {
                                 ( $event_link ) = ( $event_link =~ /^(.*)$/ ); # De-taint
                                 unlink( $event_link );
                                 $cleaned = 1;
                             }
-                        }
-                        else
-                        {
+                        } else {
                             $fs_events->{$event} = (time() - ($^T - ((-M $event_path) * 24*60*60)));
                         }
                     }
                 }
                 chdir( EVENT_PATH );
-            }
-        }
-        else
-        {
+            } # end foreach day_dir
+        } else {
             chdir( $monitor_dir );
             opendir( DIR, "." ) or Fatal( "Can't open directory '$monitor_dir': $!" );
             my @temp_events = sort { $b <=> $a } grep { -d $_ && $_ =~ /^\d+$/ } readdir( DIR );
             closedir( DIR );
             my $count = 0;
-            foreach my $event ( @temp_events )
-            {
-                if ( $count++ > MAX_AGED_DIRS )
-                {
+            foreach my $event ( @temp_events ) {
+                if ( $count++ > MAX_AGED_DIRS ) {
                     $fs_events->{$event} = -1;
-                }
-                else
-                {
+                } else {
                     $fs_events->{$event} = (time() - ($^T - ((-M $event) * 24*60*60)));
                 }
             }
             chdir( EVENT_PATH );
-        }
+        } # end USE_DEEP_STORAGE
         Debug( "Got ".int(keys(%$fs_events))." events\n" );
-    }
+    } # end foreach monitor_id
     redo MAIN if ( $cleaned );
 
     $cleaned = 0;
-    while ( my ( $fs_monitor, $fs_events ) = each(%$fs_monitors) ) {
-        if ( my $db_events = $db_events{$fs_monitor} ) {
+    while ( my ( $monitor_id, $fs_events ) = each(%fs_monitors) ) {
+        if ( my $event_ages = $event_ages{$monitor_id} ) {
             if ( ! $fs_events ) {
-				Debug("No fs events for monitor $fs_monitor");
+				Debug("No fs events for monitor $monitor_id");
 				next;
 			} # end if ! fs_events
 
-			while ( my ( $fs_event, $age ) = each(%$fs_events ) ) {
-                if ( !defined($db_events->{$fs_event}) && ($age < 0 || ($age > $Config{ZM_AUDIT_MIN_AGE})) )
+			while ( my ( $event_id, $age ) = each %$fs_events ) {
+                if ( !defined($$event_ages{$event_id}) && ($age < 0 || ($age > $Config{ZM_AUDIT_MIN_AGE})) ) {
 					# Since all this processing could take a long time, we need to double check that it doesn't exist in the db.
-					my $rv = $eventExistsSth->execute( $fs_monitor, $fs_event );
+					my $rv = $eventExistsSth->execute( $monitor_id, $event_id );
 					if ( ! $eventExistsSth->fetchall_arrayref() ) {
-						aud_print( "Filesystem event '$fs_monitor / $fs_event' does not exist in database" );
+						aud_print( "Filesystem event '$monitor_id / $event_id' does not exist in database" );
 						if ( confirm() ) {
-							deleteEventFiles( $fs_event, $fs_monitor );
+							deleteEventFiles( $event_id, $monitor_id );
 							$cleaned = 1;
 						}
 					} # Event really does not exist in the db.
 				}
-			}
-        } elsif ( ! $db_monitors->{$fs_monitor} ) {
-            aud_print( "Filesystem monitor '$fs_monitor' does not exist in database" );
+			} # end while each fs_event
+        } elsif ( ! $db_monitors{$monitor_id} ) {
+            aud_print( "Filesystem monitor '$monitor_id' does not exist in database" );
             if ( confirm() ) {
-                my $command = "rm -rf $fs_monitor";
+                my $command = "rm -rf $monitor_id";
                 executeShellCommand( $command );
                 $cleaned = 1;
             }
         }
-    }
+    } # end while each fs_monitors
 
     my $monitor_links;
     foreach my $link ( glob("*") )
@@ -318,36 +298,32 @@ MAIN: while( $loop ) {
     my $deleteStatsSql = "delete low_priority from Stats where EventId = ?";
     my $deleteStatsSth = $dbh->prepare_cached( $deleteStatsSql )
         or Fatal( "Can't prepare '$deleteStatsSql': ".$dbh->errstr() );
-    while ( my ( $db_monitor, $db_events ) = each(%$db_monitors) )
-    {
-        if ( my $fs_events = $fs_monitors->{$db_monitor} )
-        {
-            if ( $db_events )
-            {
-                while ( my ( $db_event, $age ) = each(%$db_events ) )
-                {
-                    if ( !defined($fs_events->{$db_event}) ) {
+
+    while ( my ( $monitor_id, $monitor ) = each(%db_monitors) ) {
+		my $event_ages = $event_ages{$monitor_id};
+        if ( my $fs_events = $fs_monitors{$monitor_id} ) {
+            if ( $event_ages and %{$event_ages} ) {
+                while ( my ( $event_id, $age ) = each(%$event_ages ) ) {
+                    if ( !defined($fs_events->{$event_id}) ) {
 						if ( $age > $Config{ZM_AUDIT_MIN_AGE} ) {
-							aud_print( "Database event '$db_monitor/$db_event' does not exist in filesystem" );
+							aud_print( "Database event '$monitor_id/$event_id' does not exist in filesystem" );
 							if ( confirm() ) {
-								my $res = $deleteEventSth->execute( $db_event )
+								my $res = $deleteEventSth->execute( $event_id )
 									or Fatal( "Can't execute: ".$deleteEventSth->errstr() );
-								$res = $deleteFramesSth->execute( $db_event )
+								$res = $deleteFramesSth->execute( $event_id )
 									or Fatal( "Can't execute: ".$deleteFramesSth->errstr() );
-								$res = $deleteStatsSth->execute( $db_event )
+								$res = $deleteStatsSth->execute( $event_id )
 									or Fatal( "Can't execute: ".$deleteStatsSth->errstr() );
 								$cleaned = 1;
 							}
 						} else {
-							aud_print( "Database event '$db_monitor/$db_event' does not exist in filesystem but too young to delete." );
+							aud_print( "Database event '$monitor_id/$event_id' does not exist in filesystem but too young to delete." );
 						}
                     }
                 }
             }
-        }
-        else
-        {
-            aud_print( "Database monitor '$db_monitor' does not exist in filesystem" );
+        } else {
+            aud_print( "Database monitor '$monitor_id' does not exist in filesystem" );
             #if ( confirm() )
             #{
                 # We don't actually do this in case it's new
@@ -388,11 +364,9 @@ MAIN: while( $loop ) {
         or Fatal( "Can't prepare '$selectEmptyEventsSql': ".$dbh->errstr() );
     $res = $selectEmptyEventsSth->execute()
         or Fatal( "Can't execute: ".$selectEmptyEventsSth->errstr() );
-    while( my $event = $selectEmptyEventsSth->fetchrow_hashref() )
-    {
+    while( my $event = $selectEmptyEventsSth->fetchrow_hashref() ) {
         aud_print( "Found empty event with no frame records '$event->{Id}'" );
-        if ( confirm() )
-        {
+        if ( confirm() ) {
             $res = $deleteEventSth->execute( $event->{Id} )
                 or Fatal( "Can't execute: ".$deleteEventSth->errstr() );
             $cleaned = 1;

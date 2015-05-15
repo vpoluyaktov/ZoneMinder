@@ -194,7 +194,13 @@ MAIN: while( $loop ) {
                 chdir( $day_dir );
                 opendir( DIR, "." )
                     or Fatal( "Can't open directory '$day_dir': $!" );
-                my @event_links = sort { $b <=> $a } grep { -l $_ } readdir( DIR );
+				my @dir_contents = readdir( DIR );
+				if ( ! @dir_contents ) {
+					Debug("Dir $day_dir is empty, deleting.");
+					`rmdir $day_dir`;
+					next;
+				}
+                my @event_links = sort { $b <=> $a } grep { -l $_ }@dir_contents;
                 closedir( DIR );
                 my $count = 0;
                 foreach my $event_link ( @event_links ) {
@@ -325,7 +331,7 @@ MAIN: while( $loop ) {
 								$cleaned = 1;
 							}
 						} else {
-							aud_print( "Database event '$monitor_id/$event_id' does not exist in filesystem but too young to delete." );
+							aud_print( "Database event '$monitor_id/$event_id' does not exist in filesystem but too young to delete.\n" );
 						}
                     }
                 }

@@ -1,3 +1,9 @@
+zoneminder (1.29.0-trusty-33) trusty; urgency=medium
+
+  * update zmaudit some more
+
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Thu, 14 May 2015 13:44:35 -0400
+
 zoneminder (1.29.0-trusty-32) trusty; urgency=medium
 
   * merge zmaudit_updates1

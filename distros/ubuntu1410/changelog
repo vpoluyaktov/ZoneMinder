@@ -1,26 +1,38 @@
-zoneminder (1.29.0-vivid-31) vivid; urgency=medium
+zoneminder (1.29.0-trusty-36) trusty; urgency=medium
 
-  * split window sizes into separate js + master merge.
+  * Detect select interuption when no action on our fd
 
- -- Isaac Connor <iconnor@connortechnology.com>  Fri, 01 May 2015 16:16:51 -0400
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Thu, 28 May 2015 09:35:59 -0400
 
-zoneminder (1.29.0-vivid-30) vivid; urgency=medium
+zoneminder (1.29.0-trusty-35) trusty; urgency=medium
 
-  * merge h264 video
+  * better logging
 
- -- Isaac Connor <iconnor@connortechnology.com>  Tue, 28 Apr 2015 11:54:08 -0400
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Fri, 22 May 2015 15:30:42 -0400
 
-zoneminder (1.29.0-trusty-29) trusty; urgency=medium
+zoneminder (1.29.0-trusty-34) trusty; urgency=medium
 
-  * merge master
+  * Faster shutdown and changes to ReadData
 
- -- Isaac Connor <iconnor@testing.internal.point-one.com>  Tue, 12 May 2015 10:23:08 -0400
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Thu, 21 May 2015 15:54:47 -0400
 
-zoneminder (1.29.0-trusty-28) trusty; urgency=medium
+zoneminder (1.29.0-trusty-33) trusty; urgency=medium
 
-  * Merge master, which contains session concurrency fix
+  * update zmaudit some more
 
- -- Isaac Connor <iconnor@testing.internal.point-one.com>  Mon, 20 Apr 2015 13:38:42 -0400
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Thu, 14 May 2015 13:44:35 -0400
+
+zoneminder (1.29.0-trusty-32) trusty; urgency=medium
+
+  * merge zmaudit_updates1
+
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Wed, 13 May 2015 15:51:56 -0400
+
+zoneminder (1.29.0-trusty-31) trusty; urgency=medium
+
+  * Merge some fixes and zmaudit improvements
+
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Wed, 13 May 2015 15:16:19 -0400
 
 zoneminder (1.29.0-trusty-27) trusty; urgency=medium
 

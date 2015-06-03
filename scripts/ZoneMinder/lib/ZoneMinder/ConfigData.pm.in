@@ -2184,6 +2184,23 @@ ZoneMinder",
         type        => $types{email},
         category    => "mail",
     },
+	{
+        name => "ZM_OPT_EMAIL_MONITOR_CHANGES",
+        default => "",
+        description => "Whether to email someone when a monitor's details or function have changed.",
+        help => "This function can help ensure that monitors are not accidentally or abusively altered.",
+        type => $types{boolean},
+        category => "mail",
+    },
+	{
+		name => "ZM_EMAIL_MONITOR_CHANGES_TO",
+		default => "",
+		description => "The email address you wish your monitor change notifications to be sent to",
+		requires => [ { name => "ZM_OPT_EMAIL_MONITOR_CHANGES", value => "yes" } ],
+		help => "The emails or messages will be sent to this.  Must conform to RFC 2822.",
+		type => $types{email},
+		category => "mail",
+	},
     {
         name        => "ZM_MESSAGE_TEXT",
         default     => 'subject = "ZoneMinder: Alarm - %MN%-%EI%"
@@ -2707,6 +2724,15 @@ body = "ZM alarm detected - %EL% secs, %EF%/%EFA% frames, t%EST%/m%ESM%/a%ESA% s
         category    => "system",
     },
     # Deprecated, really no longer necessary
+	{
+		name => "ZM_REDUCTION_FPS_RESET_TIME",
+		default => "0",
+		description => "After how many seconds should the maxfps of a stream go back to normal after it has been throttled",
+		help => "When a stream cannot send frames as fast as requested (generally due to too slow of a connection) it will throttle it back, unfortunately if the cause of this was only temporary the FPS will never pickup again.  By setting this to a value greater than 0 it will automatically go back to the original FPS after X seconds from when the last throttle took place.",
+		type => $types{integer},
+		readonly => 0,
+		category => "image",
+	},
     {
         name        => "ZM_WEB_REFRESH_METHOD",
         default     => "javascript",
@@ -3871,15 +3897,6 @@ body = "ZM alarm detected - %EL% secs, %EF%/%EFA% frames, t%EST%/m%ESM%/a%ESA% s
         type        => $types{boolean},
         readonly    => 1,
         category    => "dynamic",
-    },
-    {
-        name        => "ZM_REDUCTION_FPS_RESET_TIME",
-        default     => "0",
-        description => "After how many seconds should the maxfps of a stream go back to normal after it has been throttled",
-        help        => "When a stream cannot send frames as fast as requested (generally due to too slow of a connection) it will throttle it back, unfortunately if the cause of this was only temporary the FPS will never pickup again.  By setting this to a value greater than 0 it will automatically go back to the original FPS after X seconds from when the last throttle took place.",
-        type        => $types{integer},
-        readonly    => 0,
-        category    => "image",
     },
     {
         name        => "ZM_EYEZM_DEBUG",

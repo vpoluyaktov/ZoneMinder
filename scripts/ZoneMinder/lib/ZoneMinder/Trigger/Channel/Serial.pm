@@ -56,8 +56,8 @@ sub new
 
 sub open
 {
-	my $self = shift;
-	my $device = new Device::SerialPort( $self->{path} );
+    my $self = shift;
+    my $device = new Device::SerialPort( $self->{path} );
 	if ( ! $device )
     {
         Error( "Unable to open $$self{path}: $!" );

@@ -253,13 +253,16 @@ int main( int argc, char *argv[] )
 			{
 				if ( last_capture_times[j].tv_sec )
 				{
+					// capturing has taken some amount of time. So calculate it and adjust the delay to compensate.
 					DELTA_TIMEVAL( delta_time, now, last_capture_times[j], DT_PREC_3 );
 					if ( monitors[i]->GetState() == Monitor::ALARM )
 						next_delays[j] = alarm_capture_delays[j]-delta_time.delta;
 					else
 						next_delays[j] = capture_delays[j]-delta_time.delta;
-					if ( next_delays[j] < 0 )
+					if ( next_delays[j] < 0 ) {
+						// If it tooks longer than our needed delay, then we could get a next next_delay
 						next_delays[j] = 0;
+					}
 				}
 				else
 				{
@@ -267,10 +270,14 @@ int main( int argc, char *argv[] )
 				}
 				if ( next_delays[j] <= min_delay )
 				{
+					// Won't this be set to 0 on the first iteration? No because it gets reset on each iteration.
+					// but at some point min_delay will be INT_MAX and next_delay will be less than that.  
 					min_delay = next_delays[j];
 				}
 			}
+					Debug(3, "min_delay set to %d", min_delay);
 
+			// Umm.. next_delays[i] cannot be < 0
 			if ( next_delays[i] <= min_delay || next_delays[i] <= 0 )
 			{
 				// PreCapture does connection, so failures should come back here.  We loop, with sleeping until this succeeds
@@ -316,7 +323,7 @@ int main( int argc, char *argv[] )
 					}
 				}
 				gettimeofday( &(last_capture_times[i]), NULL );
-			}
+			} // end if ( next_delays[i] <= min_delay || next_delays[i] <= 0 )
 		} // end foreach n_monitors
 		sigprocmask( SIG_UNBLOCK, &block_set, 0 );
 	} // end while ! zm_terminate

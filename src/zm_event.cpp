@@ -59,11 +59,12 @@ char Event::video_file_format[PATH_MAX];
 int Event::pre_alarm_count = 0;
 Event::PreAlarmData Event::pre_alarm_data[MAX_PRE_ALARM_FRAMES] = { { 0 } };
 
-Event::Event( Monitor *p_monitor, struct timeval p_start_time, const std::string &p_cause, const StringSetMap &p_noteSetMap ) :
+Event::Event( Monitor *p_monitor, struct timeval p_start_time, const std::string &p_cause, const StringSetMap &p_noteSetMap, bool p_videoEvent ) :
     monitor( p_monitor ),
     start_time( p_start_time ),
     cause( p_cause ),
-    noteSetMap( p_noteSetMap )
+    noteSetMap( p_noteSetMap ),
+    videoEvent( p_videoEvent )
 {
     if ( !initialised )
         Initialise();
@@ -81,7 +82,7 @@ Event::Event( Monitor *p_monitor, struct timeval p_start_time, const std::string
     static char sql[ZM_SQL_MED_BUFSIZ];
 
     struct tm *stime = localtime( &start_time.tv_sec );
-    snprintf( sql, sizeof(sql), "insert into Events ( MonitorId, Name, StartTime, Width, Height, Cause, Notes ) values ( %d, 'New Event', from_unixtime( %ld ), %d, %d, '%s', '%s' )", monitor->Id(), start_time.tv_sec, monitor->Width(), monitor->Height(), cause.c_str(), notes.c_str() );
+    snprintf( sql, sizeof(sql), "insert into Events ( MonitorId, Name, StartTime, Width, Height, Cause, Notes, Videoed ) values ( %d, 'New Event', from_unixtime( %ld ), %d, %d, '%s', '%s', '%d' )", monitor->Id(), start_time.tv_sec, monitor->Width(), monitor->Height(), cause.c_str(), notes.c_str(), videoEvent );
     if ( mysql_query( &dbconn, sql ) )
     {
         Error( "Can't insert event: %s", mysql_error( &dbconn ) );
@@ -172,6 +173,7 @@ Event::Event( Monitor *p_monitor, struct timeval p_start_time, const std::string
 	video_name[0] = 0;
 
 	/* Save as video */
+
 	if ( monitor->GetOptVideoWriter() != 0 ) {
 		int nRet; 
 		snprintf( video_name, sizeof(video_name), "%d-%s", id, "video.mp4" );
@@ -611,12 +613,18 @@ void Event::AddFramesInternal( int n_frames, int start_frame, Image **images, st
 
         static char event_file[PATH_MAX];
         snprintf( event_file, sizeof(event_file), capture_file_format, path, frames );
-
-        Debug( 1, "Writing pre-capture frame %d", frames );
-        if ( monitor->GetOptSaveJPEGs() & 1) {
-        	WriteFrameImage( images[i], *(timestamps[i]), event_file );
+	if ( monitor->GetOptSaveJPEGs() & 4) {
+            //If this is the first frame, we should add a thumbnail to the event directory
+            if(frames == 10){
+                char snapshot_file[PATH_MAX];
+                snprintf( snapshot_file, sizeof(snapshot_file), "%s/snapshot.jpg", path );
+                WriteFrameImage( images[i], *(timestamps[i]), snapshot_file );
+            }
         }
-
+        if ( monitor->GetOptSaveJPEGs() & 1) {
+            Debug( 1, "Writing pre-capture frame %d", frames );
+            WriteFrameImage( images[i], *(timestamps[i]), event_file );
+        }
 	if ( videowriter != NULL ) {
  		WriteFrameVideo( images[i], *(timestamps[i]), videowriter );
 	}
@@ -659,12 +667,19 @@ void Event::AddFrame( Image *image, struct timeval timestamp, int score, Image *
 
     static char event_file[PATH_MAX];
     snprintf( event_file, sizeof(event_file), capture_file_format, path, frames );
-
-    Debug( 1, "Writing capture frame %d", frames );
+    
+    if ( monitor->GetOptSaveJPEGs() & 4) {
+        //If this is the first frame, we should add a thumbnail to the event directory
+        if(frames == 10){
+            char snapshot_file[PATH_MAX];
+            snprintf( snapshot_file, sizeof(snapshot_file), "%s/snapshot.jpg", path );
+            WriteFrameImage( image, timestamp, snapshot_file );
+        }
+    }
     if( monitor->GetOptSaveJPEGs() & 1) {
+        Debug( 1, "Writing capture frame %d", frames );
         WriteFrameImage( image, timestamp, event_file );
     }
-
     if ( videowriter != NULL ) {
         WriteFrameVideo( image, timestamp, videowriter );
     }

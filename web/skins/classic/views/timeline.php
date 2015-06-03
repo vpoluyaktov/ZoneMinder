@@ -813,7 +813,15 @@ xhtmlHeaders(__FILE__, $SLANG['Timeline'] );
     <div id="content" class="chartSize">
       <div id="topPanel" class="graphWidth">
         <div id="imagePanel">
-          <div id="image" class="imageHeight"><img id="imageSrc" class="imageWidth" src="graphics/transparent.gif" alt="<?php echo $SLANG['ViewEvent'] ?>" title="<?php echo $SLANG['ViewEvent'] ?>"/></div>
+          <div id="image" class="imageHeight">
+			<!-- <img id="imageSrc" class="imageWidth" src="graphics/transparent.gif" alt="<?php echo $SLANG['ViewEvent'] ?>" title="<?php echo $SLANG['ViewEvent'] ?>"/>-->
+			<!-- width="<?php echo $event['Width']; ?>" height="<?php echo $event['Height']; ?>" -->
+			<video id="preview" width="100%" controls>
+				<source src="<?php echo "/events/".getEventPath($event)."/event.mp4"; ?>" type="video/mp4">
+Your browser does not support the video tag.
+			</video>
+
+</div>
         </div>
         <div id="dataPanel">
           <div id="textPanel">

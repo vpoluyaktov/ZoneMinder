@@ -62,6 +62,7 @@ zm_SOURCES = \
 	zm_utils.cpp \
 	zm_fifo.cpp \
 	zm_video.cpp \
+	zm_videostore.cpp \
 	zm_zone.cpp
 
 zmc_SOURCES = zmc.cpp $(zm_SOURCES)
@@ -120,6 +121,7 @@ noinst_HEADERS = \
 	zm_utils.h \
 	zm_fifo.h \
 	zm_video.h \
+	zm_videostore.h \
 	zm_zone.h
 
 EXTRA_DIST = \

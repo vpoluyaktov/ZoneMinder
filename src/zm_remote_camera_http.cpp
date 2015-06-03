@@ -1149,7 +1149,7 @@ int RemoteCameraHttp::GetResponse()
                         }
                     }
 
-                    Debug( 3, "Returning %d (%d) bytes of captured content", content_length, buffer.size() );
+                    Debug( 3, "Returning %d bytes, buffer size: (%d) bytes of captured content", content_length, buffer.size() );
                     return( content_length );
                 }
             }

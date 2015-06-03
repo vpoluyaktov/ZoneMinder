@@ -41,16 +41,18 @@ bool RtpDataThread::recvPacket( const unsigned char *packet, size_t packetLen )
         //printf( "%02x ", (unsigned char)packet[i] );
     //printf( "\n" );
 
-    Debug( 5, "Ver: %d", rtpHeader->version );
-    Debug( 5, "P: %d", rtpHeader->p );
-    Debug( 5, "Pt: %d", rtpHeader->pt );
-    Debug( 5, "Mk: %d", rtpHeader->m );
-    Debug( 5, "Seq: %d", ntohs(rtpHeader->seqN) );
-    Debug( 5, "T/S: %x", ntohl(rtpHeader->timestampN) );
-    Debug( 5, "SSRC: %x", ntohl(rtpHeader->ssrcN) );
-
     //unsigned short seq = ntohs(rtpHeader->seqN);
     unsigned long ssrc = ntohl(rtpHeader->ssrcN);
+
+	Debug( 5, "Ver: %d, P: %d, Pt: %d, Mk: %d, Seq %d, T/S: %x, SSRC: %x", 
+		rtpHeader->version, 
+		rtpHeader->p,
+		rtpHeader->pt,
+		rtpHeader->m,
+		ntohs(rtpHeader->seqN),
+		ntohl(rtpHeader->timestampN),
+		ssrc,
+		);
 
     if ( mRtpSource.getSsrc() && (ssrc != mRtpSource.getSsrc()) )
     {

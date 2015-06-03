@@ -387,6 +387,7 @@ Monitor::Monitor(
 
     mem_size = sizeof(SharedData)
              + sizeof(TriggerData)
+             + sizeof(VideoStoreData) //Information to pass back to the capture process
              + (image_buffer_count*sizeof(struct timeval))
              + (image_buffer_count*camera->ImageSize())
              + 64; /* Padding used to permit aligning the images buffer to 16 byte boundary */
@@ -422,6 +423,10 @@ Monitor::Monitor(
         trigger_data->trigger_text[0] = 0;
         trigger_data->trigger_showtext[0] = 0;
         shared_data->valid = true;
+        video_store_data->recording = false;
+        snprintf(video_store_data->event_file, sizeof(video_store_data->event_file), "nothing");
+        video_store_data->size = sizeof(VideoStoreData);
+        //video_store_data->frameNumber = 0;
     } else if ( purpose == ANALYSIS ) {
 		this->connect();
 		if ( ! mem_ptr ) exit(-1);
@@ -565,7 +570,8 @@ bool Monitor::connect() {
 #endif // ZM_MEM_MAPPED
     shared_data = (SharedData *)mem_ptr;
     trigger_data = (TriggerData *)((char *)shared_data + sizeof(SharedData));
-    struct timeval *shared_timestamps = (struct timeval *)((char *)trigger_data + sizeof(TriggerData));
+    video_store_data = (VideoStoreData *)((char *)trigger_data + sizeof(TriggerData));
+    struct timeval *shared_timestamps = (struct timeval *)((char *)video_store_data + sizeof(VideoStoreData));
     unsigned char *shared_images = (unsigned char *)((char *)shared_timestamps + (image_buffer_count*sizeof(struct timeval)));
     
     if(((unsigned long)shared_images % 16) != 0) {
@@ -1283,6 +1289,10 @@ bool Monitor::Analyse()
     {
         bool signal = shared_data->signal;
         bool signal_change = (signal != last_signal);
+        
+        //Set video recording flag for event start constructor and easy reference in code
+        bool videoRecording = ((GetOptVideoWriter() == 2) && camera->SupportsNativeVideo());
+        
         if ( trigger_data->trigger_state != TRIGGER_OFF )
         {
             unsigned int score = 0;
@@ -1394,10 +1404,15 @@ bool Monitor::Analyse()
                     if ( noteSet.size() > 0 )
                         noteSetMap[LINKED_CAUSE] = noteSet;
                 }
+                
+                //TODO: What happens is the event closes and sets recording to false then recording to true again so quickly that our capture daemon never picks it up. Maybe need a refresh flag?
                 if ( (!signal_change && signal) && (function == RECORD || function == MOCORD) )
                 {
                     if ( event )
                     {
+                        //TODO: We shouldn't have to do this every time. Not sure why it clears itself if this isn't here??
+                        snprintf(video_store_data->event_file, sizeof(video_store_data->event_file), "%s", event->getEventFile());
+                        
                         int section_mod = timestamp->tv_sec%section_length;
                         if ( section_mod < last_section_mod )
                         {
@@ -1423,9 +1438,12 @@ bool Monitor::Analyse()
                     {
 
                         // Create event
-                        event = new Event( this, *timestamp, "Continuous", noteSetMap );
+                        event = new Event( this, *timestamp, "Continuous", noteSetMap, videoRecording );
                         shared_data->last_event = event->Id();
-
+                        //set up video store data
+                        snprintf(video_store_data->event_file, sizeof(video_store_data->event_file), "%s", event->getEventFile());
+                        video_store_data->recording = true;
+                        
                         Info( "%s: %03d - Opening new event %d, section start", name, image_count, event->Id() );
 
                         /* To prevent cancelling out an existing alert\prealarm\alarm state */
@@ -1482,8 +1500,11 @@ bool Monitor::Analyse()
                                     pre_event_images--;
                                 }
 
-                                event = new Event( this, *(image_buffer[pre_index].timestamp), cause, noteSetMap );
+                                event = new Event( this, *(image_buffer[pre_index].timestamp), cause, noteSetMap, videoRecording );
                                 shared_data->last_event = event->Id();
+                                //set up video store data
+                                snprintf(video_store_data->event_file, sizeof(video_store_data->event_file), "%s", event->getEventFile());
+                                video_store_data->recording = true;
 
                                 Info( "%s: %03d - Opening new event %d, alarm start", name, image_count, event->Id() );
 
@@ -1622,15 +1643,20 @@ bool Monitor::Analyse()
                     }
                     else if ( state == TAPE )
                     {
+                        //Video Storage: activate only for supported cameras. Event::AddFrame knows whether or not we are recording video and saves frames accordingly
+                        if((GetOptVideoWriter() == 2) && camera->SupportsNativeVideo())
+                        {
+                            video_store_data->recording = true;
+                        }
                         if ( !(image_count%(frame_skip+1)) )
                         {
-                            if ( config.bulk_frame_interval > 1 )
+                        	if ( config.bulk_frame_interval > 1 )
                             {
-                                event->AddFrame( snap_image, *timestamp, (event->Frames()<pre_event_count?0:-1) );
+                        		event->AddFrame( snap_image, *timestamp, (event->Frames()<pre_event_count?0:-1) );
                             }
                             else
                             {
-                                event->AddFrame( snap_image, *timestamp );
+                            	event->AddFrame( snap_image, *timestamp );
                             }
                         }
                     }
@@ -2875,30 +2901,47 @@ Monitor *Monitor::Load( int id, bool load_zones, Purpose purpose )
 
 int Monitor::Capture()
 {
-	static int FirstCapture = 1;
-	int captureResult;
+    static int FirstCapture = 1;
+    int captureResult;
 	
-	int index = image_count%image_buffer_count;
-	Image* capture_image = image_buffer[index].image;
+    int index = image_count%image_buffer_count;
+    Image* capture_image = image_buffer[index].image;
 	
-	if ( (deinterlacing & 0xff) == 4) {
-		if ( FirstCapture != 1 ) {
-			/* Copy the next image into the shared memory */
-			capture_image->CopyBuffer(*(next_buffer.image)); 
-		}
-		
-		/* Capture a new next image */
-		captureResult = camera->Capture(*(next_buffer.image));
-		
-		if ( FirstCapture ) {
-			FirstCapture = 0;
-			return 0;
-		}
-		
-	} else {
-		/* Capture directly into image buffer, avoiding the need to memcpy() */
-		captureResult = camera->Capture(*capture_image);
+    if ( (deinterlacing & 0xff) == 4) {
+	if ( FirstCapture != 1 ) {
+            /* Copy the next image into the shared memory */
+            capture_image->CopyBuffer(*(next_buffer.image)); 
 	}
+		
+	/* Capture a new next image */
+        
+        //Check if FFMPEG camera
+        if((GetOptVideoWriter() == 2) && camera->SupportsNativeVideo()){
+            captureResult = camera->CaptureAndRecord(*(next_buffer.image), video_store_data->recording, video_store_data->event_file);
+        }else{
+            captureResult = camera->Capture(*(next_buffer.image));
+        }
+
+        if ( FirstCapture ) {
+                    FirstCapture = 0;
+                    return 0;
+            }
+
+    } else {
+        //Check if FFMPEG camera
+        if((GetOptVideoWriter() == 2) && camera->SupportsNativeVideo()){
+            //Warning("ZMC: Recording: %d", video_store_data->recording);
+            captureResult = camera->CaptureAndRecord(*capture_image, video_store_data->recording, video_store_data->event_file);
+        }else{
+            /* Capture directly into image buffer, avoiding the need to memcpy() */
+            captureResult = camera->Capture(*capture_image);
+        }
+    }
+    
+    if((GetOptVideoWriter() == 2) && captureResult > 0){
+        //video_store_data->frameNumber = captureResult;
+        captureResult = 0;
+    }
     
     if ( captureResult != 0 )
     {
@@ -3062,6 +3105,7 @@ void Monitor::TimestampImage( Image *ts_image, const struct timeval *ts_time ) c
 
 bool Monitor::closeEvent()
 {
+    video_store_data->recording = false;
     if ( event )
     {
         if ( function == RECORD || function == MOCORD )

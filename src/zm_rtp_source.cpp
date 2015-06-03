@@ -167,12 +167,12 @@ void RtpSource::updateJitter( const RtpDataHeader *header )
 {
     if ( mRtpFactor > 0 )
     {
-        Debug( 5, "Delta rtp = %.6f", tvDiffSec( mBaseTimeReal ) );
+		double mBaseTimeReal_tvDiffSec = tvDiffSec( mBaseTimeReal );
         uint32_t localTimeRtp = mBaseTimeRtp + uint32_t( tvDiffSec( mBaseTimeReal ) * mRtpFactor );
-        Debug( 5, "Local RTP time = %x", localTimeRtp );
-        Debug( 5, "Packet RTP time = %x", ntohl(header->timestampN) );
-        uint32_t packetTransit = localTimeRtp - ntohl(header->timestampN);
-        Debug( 5, "Packet transit RTP time = %x", packetTransit );
+		uint32_t header_timestamp = ntohl(header->timestampN);
+        uint32_t packetTransit = localTimeRtp - header_timestamp;
+        Debug( 5, "Delta rpt: %.6f, local RTP time: %x, Packet RTP time: %x, Packet transit RTP time = %x", 
+			mBaseTimeReal_tvDiffSec, localTimeRtp, header_timestamp, packetTransit );
 
         if ( mTransit > 0 )
         {

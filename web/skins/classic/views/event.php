@@ -18,8 +18,7 @@
 // Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 
-if ( !canView( 'Events' ) )
-{
+if ( !canView( 'Events' ) ) {
     $view = "error";
     return;
 }
@@ -27,7 +26,7 @@ if ( !canView( 'Events' ) )
 $eid = validInt( $_REQUEST['eid'] );
 $fid = !empty($_REQUEST['fid'])?validInt($_REQUEST['fid']):1;
 
-$sql = 'SELECT E.*,M.Name AS MonitorName,M.Width,M.Height,M.DefaultRate,M.DefaultScale FROM Events AS E INNER JOIN Monitors AS M ON E.MonitorId = M.Id WHERE E.Id = ?';
+$sql = 'SELECT E.*,M.Name AS MonitorName,M.DefaultRate,M.DefaultScale,M.VideoWriter,M.SaveJPEGs FROM Events AS E INNER JOIN Monitors AS M ON E.MonitorId = M.Id WHERE E.Id = ?';
 $sql_values = array( $eid );
 
 if ( $user['MonitorIds'] ) {
@@ -41,6 +40,7 @@ if ( isset( $_REQUEST['rate'] ) )
     $rate = validInt($_REQUEST['rate']);
 else
     $rate = reScale( RATE_BASE, $event['DefaultRate'], ZM_WEB_DEFAULT_RATE );
+
 if ( isset( $_REQUEST['scale'] ) )
     $scale = validInt($_REQUEST['scale']);
 else
@@ -53,12 +53,13 @@ $replayModes = array(
 );
 
 if ( isset( $_REQUEST['streamMode'] ) )
-    $streamMode = validHtmlStr($_REQUEST['streamMode']);
+	$streamMode = validHtmlStr($_REQUEST['streamMode']);
 else
-    $streamMode = canStream()?'stream':'stills';
+	$streamMode = video;
 
 if ( isset( $_REQUEST['replayMode'] ) )
     $replayMode = validHtmlStr($_REQUEST['replayMode']);
+
 if ( isset( $_COOKIE['replayMode']) && preg_match('#^[a-z]+$#', $_COOKIE['replayMode']) )
     $replayMode = validHtmlStr($_COOKIE['replayMode']);
 else {
@@ -103,60 +104,54 @@ xhtmlHeaders(__FILE__, $SLANG['Event'] );
       <div id="menuBar2">
         <div id="closeWindow"><a href="#" onclick="closeWindow();"><?php echo $SLANG['Close'] ?></a></div>
 <?php
-if ( canEdit( 'Events' ) )
-{
+if ( canEdit( 'Events' ) ) {
 ?>
-        <div id="deleteEvent"><a href="#" onclick="deleteEvent()"><?php echo $SLANG['Delete'] ?></a></div>
-        <div id="editEvent"><a href="#" onclick="editEvent()"><?php echo $SLANG['Edit'] ?></a></div>
+				<div id="deleteEvent"><a href="#" onclick="deleteEvent()"><?php echo $SLANG['Delete'] ?></a></div>
+				<div id="editEvent"><a href="#" onclick="editEvent()"><?php echo $SLANG['Edit'] ?></a></div>
+				<div id="archiveEvent" class="hidden"><a href="#" onclick="archiveEvent()"><?php echo $SLANG['Archive'] ?></a></div>
+				<div id="unarchiveEvent" class="hidden"><a href="#" onclick="unarchiveEvent()"><?php echo $SLANG['Unarchive'] ?></a></div>
 <?php
-}
-if ( canView( 'Events' ) )
-{
+} # end if canEdit('Events')
 ?>
-        <div id="exportEvent"><a href="#" onclick="exportEvent()"><?php echo $SLANG['Export'] ?></a></div>
+				<div id="framesEvent"><a href="#" onclick="showEventFrames()"><?php echo $SLANG['Frames'] ?></a></div>
 <?php
-}
-if ( canEdit( 'Events' ) )
-{
+	if ( $event['SaveJPEGs'] & 3 ) {
 ?>
-        <div id="archiveEvent" class="hidden"><a href="#" onclick="archiveEvent()"><?php echo $SLANG['Archive'] ?></a></div>
-        <div id="unarchiveEvent" class="hidden"><a href="#" onclick="unarchiveEvent()"><?php echo $SLANG['Unarchive'] ?></a></div>
+				<div id="stillsEvent"<?php if ( $streamMode == 'still' ) { ?> class="hidden"<?php } ?>><a href="#" onclick="showStills()"><?php echo $SLANG['Stills'] ?></a></div>
 <?php
-}
+	}
 ?>
-        <div id="framesEvent"><a href="#" onclick="showEventFrames()"><?php echo $SLANG['Frames'] ?></a></div>
-        <div id="streamEvent"<?php if ( $streamMode == 'stream' ) { ?> class="hidden"<?php } ?>><a href="#" onclick="showStream()"><?php echo $SLANG['Stream'] ?></a></div>
-        <div id="stillsEvent"<?php if ( $streamMode == 'still' ) { ?> class="hidden"<?php } ?>><a href="#" onclick="showStills()"><?php echo $SLANG['Stills'] ?></a></div>
-        <div id="videoEvent"<?php if ( $streamMode == 'video' ) { ?> class="hidden"<?php } ?>><a href="#" onclick="showVideo()">HTML5Video</a></div>
-<?php
-if ( ZM_OPT_FFMPEG )
-{
+				<div id="videoEvent"<?php if ( $streamMode == 'video' ) { ?> class="hidden"<?php } ?>><a href="#" onclick="showVideo()"><?php echo $SLANG['Video'] ?></a></div>
+				<div id="exportEvent"><a href="#" onclick="exportEvent()"><?php echo $SLANG['Export'] ?></a></div>
+			</div>
+			<div id="eventVideo" class="">
+<?php 
+	if ( $event['VideoWriter'] ) { 
 ?>
-        <div id="videoEvent"><a href="#" onclick="videoEvent()"><?php echo $SLANG['Video'] ?></a></div>
+		<link href="//vjs.zencdn.net/4.11/video-js.css" rel="stylesheet">
+		<script src="//vjs.zencdn.net/4.11/video.js"></script>
+		<div id="videoFeed">
+			<video id="videoobj" class="video-js vjs-default-skin" width="<?php echo reScale( $event['Width'], $scale ) ?>" height="<?php echo reScale( $event['Height'], $scale ) ?>" data-setup='{ "controls": true, "autoplay": false, "preload": "auto" }' >
+			<source src="<?php echo getEventDefaultVideoPath($event) ?>" type="video/mp4">
+			Your browser does not support the video tag.
+			</video>
+		</div>
 <?php
-}
+	 } else {
 ?>
-      </div>
-      <div id="eventStream">
-        <div id="imageFeed">
+		<div id="imageFeed">
 <?php
-if ( ZM_WEB_STREAM_METHOD == 'mpeg' && ZM_MPEG_LIVE_FORMAT )
-{
-    $streamSrc = getStreamSrc( array( "source=event", "mode=mpeg", "event=".$eid, "frame=".$fid, "scale=".$scale, "rate=".$rate, "bitrate=".ZM_WEB_VIDEO_BITRATE, "maxfps=".ZM_WEB_VIDEO_MAXFPS, "format=".ZM_MPEG_REPLAY_FORMAT, "replay=".$replayMode ) );
-    outputVideoStream( "evtStream", $streamSrc, reScale( $event['Width'], $scale ), reScale( $event['Height'], $scale ), ZM_MPEG_LIVE_FORMAT );
-}
-else
-{
-    $streamSrc = getStreamSrc( array( "source=event", "mode=jpeg", "event=".$eid, "frame=".$fid, "scale=".$scale, "rate=".$rate, "maxfps=".ZM_WEB_VIDEO_MAXFPS, "replay=".$replayMode) );
-    if ( canStreamNative() )
-    {
-        outputImageStream( "evtStream", $streamSrc, reScale( $event['Width'], $scale ), reScale( $event['Height'], $scale ), validHtmlStr($event['Name']) );
-    }
-    else
-    {
-        outputHelperStream( "evtStream", $streamSrc, reScale( $event['Width'], $scale ), reScale( $event['Height'], $scale ) );
-    }
-}
+		if ( ZM_WEB_STREAM_METHOD == 'mpeg' && ZM_MPEG_LIVE_FORMAT ) {
+			$streamSrc = getStreamSrc( array( "source=event", "mode=mpeg", "event=".$eid, "frame=".$fid, "scale=".$scale, "rate=".$rate, "bitrate=".ZM_WEB_VIDEO_BITRATE, "maxfps=".ZM_WEB_VIDEO_MAXFPS, "format=".ZM_MPEG_REPLAY_FORMAT, "replay=".$replayMode ) );
+			outputVideoStream( "evtStream", $streamSrc, reScale( $event['Width'], $scale ), reScale( $event['Height'], $scale ), ZM_MPEG_LIVE_FORMAT );
+		} else {
+			$streamSrc = getStreamSrc( array( "source=event", "mode=jpeg", "event=".$eid, "frame=".$fid, "scale=".$scale, "rate=".$rate, "maxfps=".ZM_WEB_VIDEO_MAXFPS, "replay=".$replayMode) );
+			if ( canStreamNative() ) {
+				outputImageStream( "evtStream", $streamSrc, reScale( $event['Width'], $scale ), reScale( $event['Height'], $scale ), validHtmlStr($event['Name']) );
+			} else {
+				outputHelperStream( "evtStream", $streamSrc, reScale( $event['Width'], $scale ), reScale( $event['Height'], $scale ) );
+			}
+		} # end if ZM_WEB_STREAM_METHOD == 'mpeg' && ZM_MPEG_LIVE_FORMAT )
 ?>
         </div>
         <p id="dvrControls">
@@ -178,63 +173,58 @@ else
         </div>
         <div id="progressBar" class="invisible">
 <?php
-        for ( $i = 0; $i < $panelSections; $i++ )
-        {
+        for ( $i = 0; $i < $panelSections; $i++ ) {
 ?>
            <div class="progressBox" id="progressBox<?php echo $i ?>" title=""></div>
 <?php
         }
 ?>
-        </div>
-      </div>
-     <div id="eventVideo" class="hidden">
-		<div id="videoFeed">
-			<video id="videoobj" width="<?php echo $event['Width'] ?>" height="<?php echo $event['Height'] ?>" controls autoplay>
-			<source src="<?php echo getEventDefaultVideoPath($event) ?>" type="video/mp4">
-			Your browser does not support the video tag.
-			</video>
-		</div>
-	    <div id="videoBar1">
-			<div id="prevEvent"><a href="#" onclick="prevEvent()">Previous Event</a></div>
-			<div id="dlEvent"><a id="downloadlink" href="<?php echo getEventDefaultVideoPath($event) ?>" download>Download Video</a></div>		
-			<div id="nextEvent"><a href="#" onclick="nextEvent()">Next Event</a></div>
-	    </div>
-      </div>
-      <div id="eventStills" class="hidden">
-        <div id="eventThumbsPanel">
-          <div id="eventThumbs">
-          </div>
-        </div>
-        <div id="eventImagePanel" class="hidden">
-          <div id="eventImageFrame">
-            <img id="eventImage" src="graphics/transparent.gif" alt=""/>
-            <div id="eventImageBar">
-              <div id="eventImageClose"><input type="button" value="<?php echo $SLANG['Close'] ?>" onclick="hideEventImage()"/></div>
-              <div id="eventImageStats" class="hidden"><input type="button" value="<?php echo $SLANG['Stats'] ?>" onclick="showFrameStats()"/></div>
-              <div id="eventImageData"><?php echo $SLANG['Frame'] ?> <span id="eventImageNo"></span></div>
-            </div>
-          </div>
-        </div>
-        <div id="eventImageNav">
-          <div id="eventImageButtons">
-            <div id="prevButtonsPanel">
-              <input id="prevEventBtn" type="button" value="&lt;E" onclick="prevEvent()" disabled="disabled"/>
-              <input id="prevThumbsBtn" type="button" value="&lt;&lt;" onclick="prevThumbs()" disabled="disabled"/>
-              <input id="prevImageBtn" type="button" value="&lt;" onclick="prevImage()" disabled="disabled"/>
-              <input id="nextImageBtn" type="button" value="&gt;" onclick="nextImage()" disabled="disabled"/>
-              <input id="nextThumbsBtn" type="button" value="&gt;&gt;" onclick="nextThumbs()" disabled="disabled"/>
-              <input id="nextEventBtn" type="button" value="E&gt;" onclick="nextEvent()" disabled="disabled"/>
-            </div>
-          </div>
-          <div id="thumbsSliderPanel">
-            <div id="thumbsSlider">
-              <div id="thumbsKnob">
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+		</div>    
+<?php				    
+}
+?>
+				</div>
+			</div>
+<?php
+if ($event['SaveJPEGs'] & 3) {
+?>
+			<div id="eventStills" class="hidden">
+				<div id="eventThumbsPanel">
+					<div id="eventThumbs">
+					</div>
+				</div>
+				<div id="eventImagePanel">
+					<div id="eventImageFrame">
+						<img id="eventImage" src="graphics/transparent.gif" alt=""/>
+						<div id="eventImageBar">
+							<div id="eventImageClose"><input type="button" value="<?php echo $SLANG['Close'] ?>" onclick="hideEventImage()"/></div>
+							<div id="eventImageStats" class="hidden"><input type="button" value="<?php echo $SLANG['Stats'] ?>" onclick="showFrameStats()"/></div>
+							<div id="eventImageData">Frame <span id="eventImageNo"></span></div>
+						</div>
+					</div>
+				</div>
+				<div id="eventImageNav">
+					<div id="eventImageButtons">
+						<div id="prevButtonsPanel">
+							<input id="prevEventBtn" type="button" value="&lt;E" onclick="prevEvent()" disabled="disabled"/>
+							<input id="prevThumbsBtn" type="button" value="&lt;&lt;" onclick="prevThumbs()" disabled="disabled"/>
+							<input id="prevImageBtn" type="button" value="&lt;" onclick="prevImage()" disabled="disabled"/>
+							<input id="nextImageBtn" type="button" value="&gt;" onclick="nextImage()" disabled="disabled"/>
+							<input id="nextThumbsBtn" type="button" value="&gt;&gt;" onclick="nextThumbs()" disabled="disabled"/>
+							<input id="nextEventBtn" type="button" value="E&gt;" onclick="nextEvent()" disabled="disabled"/>
+						</div>
+					</div>
+					<div id="thumbsSliderPanel">
+						<div id="thumbsSlider">
+							<div id="thumbsKnob">
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+<?php
+} # end if ($event['SaveJPEGs'] & 3)
+?>
+	</div>
 </body>
 </html>

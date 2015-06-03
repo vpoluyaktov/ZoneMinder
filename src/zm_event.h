@@ -86,6 +86,7 @@ protected:
 	struct timeval	end_time;
 	std::string     cause;
     StringSetMap    noteSetMap;
+    bool            videoEvent;
 	int				frames;
 	int				alarm_frames;
 	unsigned int	tot_score;
@@ -122,7 +123,7 @@ public:
 	static bool ValidateFrameSocket( int );
 
 public:
-	Event( Monitor *p_monitor, struct timeval p_start_time, const std::string &p_cause, const StringSetMap &p_noteSetMap );
+	Event( Monitor *p_monitor, struct timeval p_start_time, const std::string &p_cause, const StringSetMap &p_noteSetMap, bool p_videoEvent=false );
 	~Event();
 
 	int Id() const { return( id ); }
@@ -156,6 +157,10 @@ public:
     static const char *getSubPath( time_t *time )
     {
         return( Event::getSubPath( localtime( time ) ) );
+    }
+
+    char* getEventFile(void){
+ 	return video_file;
     }
 
 public:

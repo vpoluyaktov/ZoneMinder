@@ -51,7 +51,7 @@ bool RtpDataThread::recvPacket( const unsigned char *packet, size_t packetLen )
 		rtpHeader->m,
 		ntohs(rtpHeader->seqN),
 		ntohl(rtpHeader->timestampN),
-		ssrc,
+		ssrc
 		);
 
     if ( mRtpSource.getSsrc() && (ssrc != mRtpSource.getSsrc()) )

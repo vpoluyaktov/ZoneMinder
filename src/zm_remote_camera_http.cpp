@@ -171,6 +171,14 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
         return( -1 );
     }
 
+	if ( ! FD_ISSET( sd, &rfds ) ) {
+		Debug(2, "Interrupted but not due to action on our socket. Probably a signal.");
+		for ( unsigned int i = 0; i <= sd; i++ ) {
+		Debug(2, "Interrupted but not due to action on our socket. Probably a signal. sd: %d = %d", sd, FD_ISSET( i, &rfds ) );
+		}
+		return 0;
+	}
+
     int total_bytes_to_read = 0;
 
     if ( bytes_expected )
@@ -187,10 +195,9 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 
         if ( total_bytes_to_read == 0 )
         {
-			// This is not true, it just means there was no data ready.
-			// But, there was activity on the read socket. It actually does mean that the socket it closed.
-            //Debug( 3, "Socket closed" );
-            Debug( 2, "No data available at this time, but select said there was." );
+			// If socket is closed locally, then select will fail, but if it is closed remotely... 
+			// then we have an exception on our socket.. but no data.
+            Debug( 3, "Socket closed remotely" );
             //Disconnect();
             return( -1 );
         }
@@ -265,11 +272,11 @@ int RemoteCameraHttp::GetResponse()
                     static RegExpr *content_type_expr = 0;
 
 					while ( ! ( buffer_len = ReadData( buffer ) ) ) {
+                    }
 						if ( buffer_len < 0 ) {
 							Error( "Unable to read header data" );
 							return( -1 );
 						}
-                    }
                     if ( !header_expr )
                         header_expr = new RegExpr( "^(.+?\r?\n\r?\n)", PCRE_DOTALL );
                     if ( header_expr->Match( (char*)buffer, buffer.size() ) == 2 )
@@ -438,10 +445,11 @@ int RemoteCameraHttp::GetResponse()
                     {
                         Debug( 3, "Unable to extract subheader from stream, retrying" );
 						while ( ! ( buffer_len = ReadData( buffer ) ) ) {
+                        }
 							if ( buffer_len < 0 ) {
+								Error( "Unable to extract subheader data" );
 								return( -1 );
 							}
-                        }
                     }
                     break;
                 }
@@ -476,6 +484,7 @@ int RemoteCameraHttp::GetResponse()
                     {
                         while ( (long)buffer.size() < content_length )
                         {
+Debug(3, "Need more data buffer %d < content length %d", buffer.size(), content_length );
                             if ( ReadData( buffer ) < 0 ) {
                                 Error( "Unable to read content" );
                                 return( -1 );
@@ -488,12 +497,11 @@ int RemoteCameraHttp::GetResponse()
                         while ( !content_length )
                         {
 							while ( ! ( buffer_len = ReadData( buffer ) ) ) {
-								if ( buffer_len < 0 )
-								{
+                            }
+								if ( buffer_len < 0 ) {
 									Error( "Unable to read content" );
 									return( -1 );
 								}
-                            }
                             static RegExpr *content_expr = 0;
 							if ( mode == MULTI_IMAGE )
 							{
@@ -614,12 +622,11 @@ int RemoteCameraHttp::GetResponse()
                 case HEADERCONT :
                 {
 					while ( ! ( buffer_len = ReadData( buffer ) ) ) {
-						if ( buffer_len < 0 )
-						{
+                    }
+						if ( buffer_len < 0 ) {
 							Error( "Unable to read header" );
 							return( -1 );
 						}
-                    }
 
                     char *crlf = 0;
                     char *header_ptr = (char *)buffer;
@@ -964,11 +971,11 @@ int RemoteCameraHttp::GetResponse()
                     {
                         Debug( 3, "Unable to extract subheader from stream, retrying" );
                         while ( ! ( buffer_len = ReadData( buffer ) ) ) {
+                        }
 							if ( buffer_len < 0 ) {
 								Error( "Unable to read subheader" );
 								return( -1 );
 							}
-                        }
                         state = SUBHEADERCONT;
                     }
                     break;
@@ -1130,7 +1137,7 @@ int RemoteCameraHttp::Capture( Image &image )
     }
     if ( content_length < 0 )
     {
-        Error( "Unable to get response" );
+        Error( "Unable to get response, disconnecting" );
         Disconnect();
         return( -1 );
     }

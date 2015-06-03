@@ -2297,23 +2297,6 @@ body = "ZM alarm detected - %EL% secs, %EF%/%EFA% frames, t%EST%/m%ESM%/a%ESA% s
         category    => "mail",
     },
     {
-        name => "ZM_OPT_EMAIL_MONITOR_CHANGES",
-        default => "",
-        description => "Whether to email someone when a monitor's details or function have changed.",
-        help => "This function can help ensure that monitors are not accidentally or abusively altered.",
-        type => $types{boolean},
-        category => "mail",
-    },
-    {
-        name => "ZM_EMAIL_MONITOR_CHANGES_TO",
-        default => "",
-        description => "The email address you wish your monitor change notifications to be sent to",
-        requires => [ { name => "ZM_OPT_EMAIL_MONITOR_CHANGES", value => "yes" } ],
-        help => "The emails or messages will be sent to this.  Must conform to RFC 2822.",
-        type => $types{email},
-        category => "mail",
-    },
-    {
         name        => "ZM_URL",
         default     => "",
         description => "The URL of your ZoneMinder installation",

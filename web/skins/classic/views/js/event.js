@@ -13,10 +13,9 @@ function changeScale()
     var newHeight = ( baseHeight * scale ) / SCALE_BASE;
 
 	if(vid) {
-		vid.width = newWidth;
-		vid.height = newHeight;
+		vid.width(newWidth).height(newHeight);
 	} else {
-        	streamScale( scale );
+       	streamScale( scale );
 		var streamImg = document.getElementById('evtStream');
 		streamImg.style.width = newWidth + "px";
 		streamImg.style.height = newHeight + "px";
@@ -835,7 +834,7 @@ function setupListener()
 function initPage()
 {
     //FIXME prevent blocking...not sure what is happening or best way to unblock
-	vid=$('videoobj');
+	vid=videojs('videoobj');
         if (vid)
     {
 	/*setupListener();

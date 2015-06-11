@@ -28,6 +28,10 @@
 	Router::mapResources('configs');
 	Router::mapResources('events');
 	Router::mapResources('frames');
+	Router::mapResources('host');
+	Router::mapResources('logs');
+	Router::mapResources('states');
+	Router::mapResources('zonepresets');
 	Router::parseExtensions();
 
 /**

@@ -408,7 +408,7 @@ title="<?php echo $title ?>">
 function outputImageStill( $id, $src, $width, $height, $title="" )
 {
 ?>
-<img id="<?php echo $id ?>" src="<?php echo $src ?>" alt="<?php echo $title ?>" width="<?php echo $width ?>" height="<?php echo $height ?>"/>
+<img class="img-responsive" id="<?php echo $id ?>" src="<?php echo $src ?>" alt="<?php echo $title ?>" width="<?php echo $width ?>" height="<?php echo $height ?>"/>
 <?php
 }
 
@@ -1568,9 +1568,9 @@ function getPagination( $pages, $page, $maxShortcuts, $query, $querySep='&amp;' 
             {
                 if ( false && $page > 2 )
                 {
-                    $pageText .= '<a href="?view='.$view.$querySep.'page=1'.$query.'">&lt;&lt;</a>';
+                    $pageText .= '<li><a href="?view='.$view.$querySep.'page=1'.$query.'">&lt;&lt;</a></li>';
                 }
-                $pageText .= '<a href="?view='.$view.$querySep.'page='.($page-1).$query.'">&lt;</a>';
+                $pageText .= '<li><a href="?view='.$view.$querySep.'page='.($page-1).$query.'">&lt;</a></li>';
 
                 $newPages = array();
                 $pagesUsed = array();
@@ -1590,11 +1590,11 @@ function getPagination( $pages, $page, $maxShortcuts, $query, $querySep='&amp;' 
 
                 foreach ( $newPages as $newPage )
                 {
-                    $pageText .= '<a href="?view='.$view.$querySep.'page='.$newPage.$query.'">'.$newPage.'</a>&nbsp;';
+                    $pageText .= '<li><a href="?view='.$view.$querySep.'page='.$newPage.$query.'">'.$newPage.'</a></li>';
                 }
 
             }
-            $pageText .= '-&nbsp;'.$page.'&nbsp;-';
+                    $pageText .= '<li class="active"><a href="?view='.$view.$querySep.'page='.$page.$query.'">'.$page.'</a></li>';
             if ( $page < $pages )
             {
                 $newPages = array();
@@ -1615,12 +1615,12 @@ function getPagination( $pages, $page, $maxShortcuts, $query, $querySep='&amp;' 
 
                 foreach ( $newPages as $newPage )
                 {
-                    $pageText .= '&nbsp;<a href="?view='.$view.$querySep.'page='.$newPage.$query.'">'.$newPage.'</a>';
+                    $pageText .= '<li><a href="?view='.$view.$querySep.'page='.$newPage.$query.'">'.$newPage.'</a></li>';
                 }
-                $pageText .= '<a href="?view='.$view.$querySep.'page='.($page+1).$query.'">&gt;</a>';
+                $pageText .= '<li><a href="?view='.$view.$querySep.'page='.($page+1).$query.'">&gt;</a></li>';
                 if ( false && $page < ($pages-1) )
                 {
-                    $pageText .= '<a href="?view='.$view.$querySep.'page='.$pages.$query.'">&gt;&gt;</a>';
+                    $pageText .= '<li><a href="?view='.$view.$querySep.'page='.$pages.$query.'">&gt;&gt;</a></li>';
                 }
             }
         }

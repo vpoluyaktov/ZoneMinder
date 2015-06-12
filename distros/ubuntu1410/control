@@ -120,3 +120,14 @@ Description: XML interface for ZoneMinder
  .
  This package provides a XML interface mainly intended for use with the eyeZm
  iPhone Application, but can be used with any other custom programs as well.
+
+Package: zoneminder-ui-api
+Section: web
+Architecture: all
+Depends: zoneminder-ui-base (>= ${source:Version}), ${misc:Depends}
+Description: API interface for ZoneMinder
+ ZoneMinder is a video camera security and surveillance solution.
+ .
+ This package provides an API interface mainly intended for use with angular-ui
+ or mobile applications, but can be used with any other custom programs as well.
+

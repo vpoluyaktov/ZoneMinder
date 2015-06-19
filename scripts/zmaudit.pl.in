@@ -141,16 +141,10 @@ MAIN: while( $loop ) {
         Fatal("ZM_AUDIT_MIN_AGE is not set in config.");
     }
 
-<<<<<<< HEAD
-	my %db_events;
-
-    my $db_monitors;
-=======
 	# This hash stores the ages of events inddxed first my monitor_id, then by event_id
 	my %db_event_ages;
 
     my %db_monitors;
->>>>>>> pointone
     my $monitorSelectSql = "select Id,ServerHost from Monitors order by Id";
     my $monitorSelectSth = $dbh->prepare_cached( $monitorSelectSql )
         or Fatal( "Can't prepare '$monitorSelectSql': ".$dbh->errstr() );
@@ -249,26 +243,6 @@ MAIN: while( $loop ) {
     redo MAIN if ( $cleaned );
 
     $cleaned = 0;
-<<<<<<< HEAD
-    while ( my ( $fs_monitor, $fs_events ) = each(%$fs_monitors) ) {
-        if ( my $db_events = $db_events{$fs_monitor} ) {
-            if ( ! $fs_events ) {
-				Debug("No fs events for monitor $fs_monitor");
-				next;
-			} # end if ! fs_events
-
-			while ( my ( $fs_event, $age ) = each(%$fs_events ) ) {
-                if ( !defined($db_events->{$fs_event}) && ($age < 0 || ($age > $Config{ZM_AUDIT_MIN_AGE})) )
-					# Since all this processing could take a long time, we need to double check that it doesn't exist in the db.
-					my $rv = $eventExistsSth->execute( $fs_monitor, $fs_event );
-					if ( ! $eventExistsSth->fetchall_arrayref() ) {
-						aud_print( "Filesystem event '$fs_monitor / $fs_event' does not exist in database" );
-						if ( confirm() ) {
-							deleteEventFiles( $fs_event, $fs_monitor );
-							$cleaned = 1;
-						}
-					} # Event really does not exist in the db.
-=======
     while ( my ( $monitor_id, $fs_event_ages ) = each(%fs_monitors) ) {
         if ( my $db_event_ages = $db_event_ages{$monitor_id} ) {
             if ( ! $fs_event_ages ) {
@@ -295,7 +269,6 @@ MAIN: while( $loop ) {
 					}
 				} else {
 					aud_print( "Filesystem event '$monitor_id / $event_id' exists in database\n" );
->>>>>>> pointone
 				}
 			} # end while each fs_event_ages
 		} elsif ( ! $db_monitors{$monitor_id} ) {
@@ -305,20 +278,8 @@ MAIN: while( $loop ) {
 				executeShellCommand( $command );
 				$cleaned = 1;
 			}
-<<<<<<< HEAD
-        } elsif ( ! $db_monitors->{$fs_monitor} ) {
-            aud_print( "Filesystem monitor '$fs_monitor' does not exist in database" );
-            if ( confirm() ) {
-                my $command = "rm -rf $fs_monitor";
-                executeShellCommand( $command );
-                $cleaned = 1;
-            }
-        }
-    }
-=======
 		}
 	} # end while each fs_monitors
->>>>>>> pointone
 
     my $monitor_links;
     foreach my $link ( glob("*") )
@@ -350,17 +311,6 @@ MAIN: while( $loop ) {
     my $deleteStatsSql = "delete low_priority from Stats where EventId = ?";
     my $deleteStatsSth = $dbh->prepare_cached( $deleteStatsSql )
         or Fatal( "Can't prepare '$deleteStatsSql': ".$dbh->errstr() );
-<<<<<<< HEAD
-    while ( my ( $db_monitor, $db_events ) = each(%$db_monitors) )
-    {
-        if ( my $fs_events = $fs_monitors->{$db_monitor} )
-        {
-            if ( $db_events )
-            {
-                while ( my ( $db_event, $age ) = each(%$db_events ) )
-                {
-                    if ( !defined($fs_events->{$db_event}) ) {
-=======
 
     while ( my ( $monitor_id, $monitor ) = each(%db_monitors) ) {
 		my $db_event_ages = $db_event_ages{$monitor_id};
@@ -368,7 +318,6 @@ MAIN: while( $loop ) {
             if ( $db_event_ages and %{$db_event_ages} ) {
                 while ( my ( $event_id, $age ) = each(%$db_event_ages ) ) {
                     if ( !defined($fs_event_ages->{$event_id}) ) {
->>>>>>> pointone
 						if ( $age > $Config{ZM_AUDIT_MIN_AGE} ) {
 							aud_print( "Database event '$monitor_id/$event_id' does not exist in filesystem" );
 							if ( confirm() ) {

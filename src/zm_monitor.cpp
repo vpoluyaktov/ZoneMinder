@@ -1490,13 +1490,16 @@ bool Monitor::Analyse()
                         {
                             Info( "%s: %03d - Gone into alarm state", name, image_count );
                             shared_data->state = state = ALARM;
-                            if ( signal_change || (function != MOCORD && state != ALERT) )
+							// How could state ever == ALERT here?
+                            //if ( signal_change || (function != MOCORD && state != ALERT) )
+                            if ( signal_change || (function != MOCORD) )
                             {
                                 int pre_index;
                                 if ( alarm_frame_count > 1 )
                                     pre_index = ((index+image_buffer_count)-((alarm_frame_count-1)+pre_event_count))%image_buffer_count;
                                 else
                                     pre_index = ((index+image_buffer_count)-pre_event_count)%image_buffer_count;
+
 
                                 int pre_event_images = pre_event_count;
                                 while ( pre_event_images && !image_buffer[pre_index].timestamp->tv_sec )

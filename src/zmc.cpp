@@ -280,14 +280,15 @@ int main( int argc, char *argv[] )
                     Error( "Failed to pre-capture monitor %d %d (%d/%d)", monitors[i]->Id(), monitors[i]->Name(), i+1, n_monitors );
                     //zm_terminate = true;
                     //result = -1;
-					usleep( 5000 );
-					    if ( monitors[0]->PrimeCapture() < 0 )
-						{
-							Error( "Failed to re-prime capture of initial monitor" );
-							exit( -1 );
-						}
+					usleep( 5000000 );
+					if ( monitors[0]->PrimeCapture() < 0 )
+					{
+						Error( "Failed to re-prime capture of initial monitor" );
+						exit( -1 );
+					}
 
-                    break;
+					// If we can't Pre-capture, then we can never Capture
+                    //break;
 				}
 				if ( monitors[i]->Capture() < 0 )
 				{

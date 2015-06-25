@@ -34,6 +34,15 @@ class AppController extends Controller {
 	use CrudControllerTrait;
 
 	public $components = [
+		'Auth'	=>	[
+			'authenticate'	=>	[
+				'Form'	=>	[ 
+					'fields' => [ 
+						'username' => 'email' 
+					]
+				] 
+			]
+		],
 		'RequestHandler',
 		'Crud.Crud' => [
 			'actions' => [

@@ -101,3 +101,4 @@ web/tools/mootools/mootools-more.js
 zmlinkcontent.sh
 web/events
 web/images
+/web/api/app/Plugin/Crud

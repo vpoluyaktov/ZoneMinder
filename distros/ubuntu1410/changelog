@@ -4,11 +4,11 @@ zoneminder (1.29.0-vivid-38) vivid; urgency=medium
 
  -- Isaac Connor <iconnor@connortechnology.com>  Thu, 11 Jun 2015 09:10:34 -0400
 
-zoneminder (1.29.0-vivid-37) vivid; urgency=medium
+zoneminder (1.29.0-trusty-37) trusty; urgency=medium
 
-  * Merge some things from master.
+  * merge master api stuff, set sleep after failure to capture to 5000 instead of 5000000
 
- -- Isaac Connor <iconnor@connortechnology.com>  Mon, 08 Jun 2015 10:48:59 -0400
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Fri, 19 Jun 2015 09:59:54 -0400
 
 zoneminder (1.29.0-trusty-36) trusty; urgency=medium
 

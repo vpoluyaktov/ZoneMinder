@@ -299,7 +299,7 @@ int FfmpegCamera::OpenFfmpeg() {
     if ( avformat_find_stream_info( mFormatContext, 0 ) < 0 )
 #endif
         Fatal( "Unable to find stream info from %s due to: %s", mPath.c_str(), strerror(errno) );
-    
+
     Debug ( 1, "Got stream info" );
 
     // Find first video stream present

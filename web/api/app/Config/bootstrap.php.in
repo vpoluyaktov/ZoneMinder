@@ -110,6 +110,7 @@ CakeLog::config('error', array(
 
 Configure::write('ZM_CONFIG',  '@ZM_CONFIG@');
 Configure::write('ZM_VERSION', '@VERSION@');
+Configure::write('ZM_API_VERSION', '@API_VERSION@');
 
 loadConfigFile();
 

@@ -134,6 +134,7 @@ Event::Event( Monitor *p_monitor, struct timeval p_start_time, const std::string
             else if ( i >= 3 )
                 time_path_ptr += snprintf( time_path_ptr, sizeof(time_path)-(time_path_ptr-time_path), "%s%02d", i>3?"/":"", dt_parts[i] );
         }
+		Debug(3, "Storing event to %s", path );
         char id_file[PATH_MAX];
         // Create event id symlink
         snprintf( id_file, sizeof(id_file), "%s/.%d", date_path, id );
@@ -174,22 +175,25 @@ Event::Event( Monitor *p_monitor, struct timeval p_start_time, const std::string
 
 	/* Save as video */
 
+	videowriter = NULL;
 	if ( monitor->GetOptVideoWriter() != 0 ) {
+		Debug(3, "Using video writer %d", monitor->GetOptVideoWriter() );
 		int nRet; 
 		snprintf( video_name, sizeof(video_name), "%d-%s", id, "video.mp4" );
 		snprintf( video_file, sizeof(video_file), video_file_format, path, video_name );
 		snprintf( timecodes_name, sizeof(timecodes_name), "%d-%s", id, "video.timecodes" );
 		snprintf( timecodes_file, sizeof(timecodes_file), video_file_format, path, timecodes_name );
-
+		Debug(3, "video file: %s, timecodes_file: %s", video_file, timecodes_file );
 
 		/* X264 MP4 video writer */
 		if(monitor->GetOptVideoWriter() == 1) {
 #if ZM_HAVE_VIDEOWRITER_X264MP4
 			videowriter = new X264MP4Writer(video_file, monitor->Width(), monitor->Height(), monitor->Colours(), monitor->SubpixelOrder(), monitor->GetOptEncoderParams());
 #else
-			videowriter = NULL;
 			Error("ZoneMinder was not compiled with the X264 MP4 video writer, check dependencies (x264 and mp4v2)");
 #endif
+		} else {
+			Debug(3, "unimplemented video writer");
 		}
 
 		if(videowriter != NULL) {
@@ -199,6 +203,8 @@ Event::Event( Monitor *p_monitor, struct timeval p_start_time, const std::string
 				Error("Failed opening video stream");
 				delete videowriter;
 				videowriter = NULL;
+			} else {
+				Debug(3, "Success openping videowriter stream");
 			}
 
 			/* Create timecodes file */

@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
 #ifdef SOLARIS
 #include <sys/filio.h> // FIONREAD and friends
@@ -108,7 +109,15 @@ int RemoteCameraHttp::Connect()
         {
             close(sd);
             sd = -1;
-            Warning("Can't connect to remote camera: %s", strerror(errno) );
+			char ip[INET6_ADDRSTRLEN];
+			
+			int err=getnameinfo((struct sockaddr*)p->ai_addr, p->ai_addrlen,ip,INET6_ADDRSTRLEN, 0,0,NI_NUMERICHOST);
+			if (err!=0) {
+				Error( "failed to convert address to string (code=%d) and can't connect to remote camera: %s",err, strerror(errno) );
+			} else {
+				Warning("Can't connect to remote camera at %s: %s", ip, strerror(errno) );
+			}
+
             continue;
         }
 
@@ -118,6 +127,7 @@ int RemoteCameraHttp::Connect()
 
     if(p == NULL) {
 	    Error("Unable to connect to the remote camera, aborting");
+		sd = -1;
 	    return( -1 );
     }
 
@@ -150,6 +160,10 @@ int RemoteCameraHttp::SendRequest()
 
 int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 {
+	if ( sd < 0 ) {
+		Error("SD < 0 in ReadData");
+		return( -1 );
+	}
     fd_set rfds;
     FD_ZERO(&rfds);
     FD_SET(sd, &rfds);
@@ -160,7 +174,7 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
     int n_found = select( sd+1, &rfds, NULL, NULL, &temp_timeout );
     if( n_found == 0 )
     {
-        Debug( 4, "Select timed out timeout was %d secs %d usecs", temp_timeout.tv_sec, temp_timeout.tv_usec );
+        Debug( 4, "Select timed out timeout was %d secs %d usecs, socket was %d", temp_timeout.tv_sec, temp_timeout.tv_usec, sd );
 		// Why are we disconnecting?  It's just a timeout, meaning that data wasn't available.
         //Disconnect();
         return( 0 );
@@ -272,6 +286,7 @@ int RemoteCameraHttp::GetResponse()
                     static RegExpr *content_type_expr = 0;
 
 					while ( ! ( buffer_len = ReadData( buffer ) ) ) {
+Debug(2,"Timeout");
                     }
 						if ( buffer_len < 0 ) {
 							Error( "Unable to read header data" );

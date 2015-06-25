@@ -115,7 +115,6 @@ void RemoteCameraRtsp::Initialise()
 
     av_register_all();
 
-    Connect();
 }
 
 void RemoteCameraRtsp::Terminate()
@@ -146,6 +145,8 @@ int RemoteCameraRtsp::Disconnect()
 
 int RemoteCameraRtsp::PrimeCapture()
 {
+    Connect();
+
     Debug( 2, "Waiting for sources" );
     for ( int i = 0; i < 100 && !rtspThread->hasSources(); i++ )
     {

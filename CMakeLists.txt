@@ -4,7 +4,7 @@
 #
 cmake_minimum_required (VERSION 2.6)
 project (zoneminder)
-set(zoneminder_VERSION "1.28.1")
+set(zoneminder_VERSION "1.29.0")
 
 # CMake does not allow out-of-source build if CMakeCache.exists 
 # in the source folder. Abort and notify the user

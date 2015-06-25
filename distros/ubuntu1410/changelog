@@ -1,3 +1,9 @@
+zoneminder (1.29.0-trusty-37) trusty; urgency=medium
+
+  * merge master api stuff, set sleep after failure to capture to 5000 instead of 5000000
+
+ -- Isaac Connor <iconnor@testing.internal.point-one.com>  Fri, 19 Jun 2015 09:59:54 -0400
+
 zoneminder (1.29.0-trusty-36) trusty; urgency=medium
 
   * Detect select interuption when no action on our fd

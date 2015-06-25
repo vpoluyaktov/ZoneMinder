@@ -209,7 +209,7 @@ int main( int argc, char *argv[] )
 		exit ( -1 );
 	}
 
-	Info( "Starting Capture" );
+	Info( "Starting Capture version %s", ZM_VERSION );
 
 	zmSetDefaultTermHandler();
 	zmSetDefaultDieHandler();
@@ -288,13 +288,14 @@ int main( int argc, char *argv[] )
                     //zm_terminate = true;
                     //result = -1;
 					usleep( 5000000 );
-					    if ( monitors[0]->PrimeCapture() < 0 )
-						{
-							Error( "Failed to re-prime capture of initial monitor" );
-							exit( -1 );
-						}
+					if ( monitors[0]->PrimeCapture() < 0 )
+					{
+						Error( "Failed to re-prime capture of initial monitor" );
+						exit( -1 );
+					}
 
-                    break;
+					// If we can't Pre-capture, then we can never Capture
+                    //break;
 				}
 				if ( monitors[i]->Capture() < 0 )
 				{

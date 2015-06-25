@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <netdb.h>
+#include <arpa/inet.h>
 
 #ifdef SOLARIS
 #include <sys/filio.h> // FIONREAD and friends
@@ -108,7 +109,15 @@ int RemoteCameraHttp::Connect()
         {
             close(sd);
             sd = -1;
-            Warning("Can't connect to remote camera: %s", strerror(errno) );
+			char ip[INET6_ADDRSTRLEN];
+			
+			int err=getnameinfo((struct sockaddr*)p->ai_addr, p->ai_addrlen,ip,INET6_ADDRSTRLEN, 0,0,NI_NUMERICHOST);
+			if (err!=0) {
+				Error( "failed to convert address to string (code=%d) and can't connect to remote camera: %s",err, strerror(errno) );
+			} else {
+				Warning("Can't connect to remote camera at %s: %s", ip, strerror(errno) );
+			}
+
             continue;
         }
 
@@ -118,6 +127,7 @@ int RemoteCameraHttp::Connect()
 
     if(p == NULL) {
 	    Error("Unable to connect to the remote camera, aborting");
+		sd = -1;
 	    return( -1 );
     }
 
@@ -148,8 +158,18 @@ int RemoteCameraHttp::SendRequest()
     return( 0 );
 }
 
+/* Return codes are as follows:
+ * -1 means there was an error
+ * 0 means no bytes were returned but there wasn't actually an error.
+ * > 0 is the # of bytes read.
+ */
+
 int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 {
+	if ( sd < 0 ) {
+		Error("SD %d < 0 in ReadData", sd);
+		return( -1 );
+	}
     fd_set rfds;
     FD_ZERO(&rfds);
     FD_SET(sd, &rfds);
@@ -160,7 +180,7 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
     int n_found = select( sd+1, &rfds, NULL, NULL, &temp_timeout );
     if( n_found == 0 )
     {
-        Debug( 4, "Select timed out timeout was %d secs %d usecs", temp_timeout.tv_sec, temp_timeout.tv_usec );
+        Debug( 4, "Select timed out timeout was %d secs %d usecs, socket was %d", temp_timeout.tv_sec, temp_timeout.tv_usec, sd );
 		// Why are we disconnecting?  It's just a timeout, meaning that data wasn't available.
         //Disconnect();
         return( 0 );
@@ -195,10 +215,17 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 
         if ( total_bytes_to_read == 0 )
         {
+<<<<<<< HEAD
 			// If socket is closed locally, then select will fail, but if it is closed remotely... 
 			// then we have an exception on our socket.. but no data.
             Debug( 3, "Socket closed remotely" );
             //Disconnect();
+=======
+			// If socket is closed locally, then select will fail, but if it is closed remotely
+			// then we have an exception on our socket.. but no data.
+            Debug( 3, "Socket closed remotely" );
+            //Disconnect(); // Disconnect is done outside of ReadData now.
+>>>>>>> master
             return( -1 );
         }
     }
@@ -219,7 +246,11 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
         else if ( bytes_read == 0)
         {
             Debug( 2, "Socket closed" );
+<<<<<<< HEAD
             //Disconnect();
+=======
+            //Disconnect(); // Disconnect is done outside of ReadData now.
+>>>>>>> master
             return( -1 );
         }
         else if ( bytes_read < bytes_to_read )
@@ -272,6 +303,10 @@ int RemoteCameraHttp::GetResponse()
                     static RegExpr *content_type_expr = 0;
 
 					while ( ! ( buffer_len = ReadData( buffer ) ) ) {
+<<<<<<< HEAD
+Debug(2,"Timeout");
+=======
+>>>>>>> master
                     }
 						if ( buffer_len < 0 ) {
 							Error( "Unable to read header data" );

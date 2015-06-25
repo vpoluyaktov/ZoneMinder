@@ -58,7 +58,6 @@ X264MP4Writer::X264MP4Writer(const char* p_path, const unsigned int p_width, con
 	
 	/* Initialize ffmpeg if it hasn't been initialized yet */
 	FFMPEGInit();
-
 	/* Initialize swscale */
 	zm_pf = GetFFMPEGPixelFormat(colours,subpixelorder);
 	if(zm_pf == 0) {
@@ -73,6 +72,8 @@ X264MP4Writer::X264MP4Writer(const char* p_path, const unsigned int p_width, con
 	codec_imgsize = avpicture_get_size( codec_pf, width, height);
 	if(!codec_imgsize) {
 		Error("Failed calculating codec pixel format image size");
+	} else {
+		Debug(5, "code pixel format image size is %d", codec_imgsize );
 	}
 
 	/* If supplied with user parameters to the encoder, copy them */
@@ -107,17 +108,23 @@ int X264MP4Writer::Open() {
 	if(x264enc == NULL) {
 		Error("Failed opening x264 encoder");
 		return -1;
+	} else {
+		Debug(5, "Success opening the x264 encoder" );
 	}
 
 	// Debug(4,"x264 maximum delayed frames: %d",x264_encoder_maximum_delayed_frames(x264enc));
 	
 	x264_nal_t* nals;
 	int i_nals;
-	if(!x264_encoder_headers(x264enc,&nals,&i_nals)) {
+	int rc = x264_encoder_headers(x264enc,&nals,&i_nals);
+	if(rc < 0 ) {
 		Error("Failed getting encoder headers");
 		return -2;
+	}else if( rc == 0 ) {
+		Error("No NALS returned Failed getting encoder headers");
+		return -2;
 	}
-	
+
 	/* Search SPS NAL for AVC information */
 	for(int i=0;i<i_nals;i++) {
 		if(nals[i].i_type == NAL_SPS) {
@@ -143,6 +150,8 @@ int X264MP4Writer::Open() {
 	if(!MP4SetTimeScale(mp4h, 1000)) {
 		Error("Failed setting timescale");
 		return -11;
+	} else {
+		Debug(5,"Success setting timescale");
 	}
 	
 	/* Set the global video profile */
@@ -160,6 +169,7 @@ int X264MP4Writer::Open() {
 
 	bOpen = true;
 	
+	Debug(5, "Open success");
 	return 0;
 }
 

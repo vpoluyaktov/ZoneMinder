@@ -76,7 +76,7 @@ VideoStore::VideoStore(const char *filename_in, const char *format_in, AVStream 
     } else
         Fatal("Unable to guess output format\n");*/
     
-    video_st = avformat_new_stream(oc, /*out_vid_codec?out_vid_codec:*/input_st->codec->codec);
+    video_st = avformat_new_stream(oc, /*out_vid_codec?out_vid_codec:*/(AVCodec *)input_st->codec->codec);
     if(video_st){ //FIXME handle failures
         ret=avcodec_copy_context(video_st->codec, input_st->codec);
         if(ret==0){
@@ -102,7 +102,7 @@ VideoStore::VideoStore(const char *filename_in, const char *format_in, AVStream 
         Fatal("Unable to create video out stream\n");
     
     if(inpaud_st){
-        audio_st = avformat_new_stream(oc, /*out_aud_codec?out_aud_codec:*/inpaud_st->codec->codec);
+        audio_st = avformat_new_stream(oc, /*out_aud_codec?out_aud_codec:*/(AVCodec *)inpaud_st->codec->codec);
         if(audio_st){//FIXME failure?
             ret=avcodec_copy_context(audio_st->codec, inpaud_st->codec);
             if(ret==0){ //FIXME failure?

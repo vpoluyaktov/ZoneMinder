@@ -215,17 +215,10 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 
         if ( total_bytes_to_read == 0 )
         {
-<<<<<<< HEAD
-			// If socket is closed locally, then select will fail, but if it is closed remotely... 
-			// then we have an exception on our socket.. but no data.
-            Debug( 3, "Socket closed remotely" );
-            //Disconnect();
-=======
 			// If socket is closed locally, then select will fail, but if it is closed remotely
 			// then we have an exception on our socket.. but no data.
             Debug( 3, "Socket closed remotely" );
             //Disconnect(); // Disconnect is done outside of ReadData now.
->>>>>>> master
             return( -1 );
         }
     }
@@ -246,11 +239,7 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
         else if ( bytes_read == 0)
         {
             Debug( 2, "Socket closed" );
-<<<<<<< HEAD
-            //Disconnect();
-=======
             //Disconnect(); // Disconnect is done outside of ReadData now.
->>>>>>> master
             return( -1 );
         }
         else if ( bytes_read < bytes_to_read )
@@ -303,15 +292,12 @@ int RemoteCameraHttp::GetResponse()
                     static RegExpr *content_type_expr = 0;
 
 					while ( ! ( buffer_len = ReadData( buffer ) ) ) {
-<<<<<<< HEAD
-Debug(2,"Timeout");
-=======
->>>>>>> master
+						Debug(2,"Timeout");
                     }
-						if ( buffer_len < 0 ) {
-							Error( "Unable to read header data" );
-							return( -1 );
-						}
+					if ( buffer_len < 0 ) {
+						Error( "Unable to read header data" );
+						return( -1 );
+					}
                     if ( !header_expr )
                         header_expr = new RegExpr( "^(.+?\r?\n\r?\n)", PCRE_DOTALL );
                     if ( header_expr->Match( (char*)buffer, buffer.size() ) == 2 )

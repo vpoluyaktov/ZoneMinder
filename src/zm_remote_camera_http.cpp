@@ -158,10 +158,16 @@ int RemoteCameraHttp::SendRequest()
     return( 0 );
 }
 
+/* Return codes are as follows:
+ * -1 means there was an error
+ * 0 means no bytes were returned but there wasn't actually an error.
+ * > 0 is the # of bytes read.
+ */
+
 int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 {
 	if ( sd < 0 ) {
-		Error("SD < 0 in ReadData");
+		Error("SD %d < 0 in ReadData", sd);
 		return( -1 );
 	}
     fd_set rfds;
@@ -209,10 +215,17 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
 
         if ( total_bytes_to_read == 0 )
         {
+<<<<<<< HEAD
 			// If socket is closed locally, then select will fail, but if it is closed remotely... 
 			// then we have an exception on our socket.. but no data.
             Debug( 3, "Socket closed remotely" );
             //Disconnect();
+=======
+			// If socket is closed locally, then select will fail, but if it is closed remotely
+			// then we have an exception on our socket.. but no data.
+            Debug( 3, "Socket closed remotely" );
+            //Disconnect(); // Disconnect is done outside of ReadData now.
+>>>>>>> master
             return( -1 );
         }
     }
@@ -233,7 +246,11 @@ int RemoteCameraHttp::ReadData( Buffer &buffer, int bytes_expected )
         else if ( bytes_read == 0)
         {
             Debug( 2, "Socket closed" );
+<<<<<<< HEAD
             //Disconnect();
+=======
+            //Disconnect(); // Disconnect is done outside of ReadData now.
+>>>>>>> master
             return( -1 );
         }
         else if ( bytes_read < bytes_to_read )
@@ -286,7 +303,10 @@ int RemoteCameraHttp::GetResponse()
                     static RegExpr *content_type_expr = 0;
 
 					while ( ! ( buffer_len = ReadData( buffer ) ) ) {
+<<<<<<< HEAD
 Debug(2,"Timeout");
+=======
+>>>>>>> master
                     }
 						if ( buffer_len < 0 ) {
 							Error( "Unable to read header data" );
@@ -1108,7 +1128,7 @@ Debug(3, "Need more data buffer %d < content length %d", buffer.size(), content_
                         }
                     }
 
-                    Debug( 3, "Returning %d (%d) bytes of captured content", content_length, buffer.size() );
+                    Debug( 3, "Returning %d bytes, buffer size: (%d) bytes of captured content", content_length, buffer.size() );
                     return( content_length );
                 }
             }

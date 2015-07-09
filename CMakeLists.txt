@@ -204,6 +204,16 @@ check_type_size("ucontext_t" HAVE_UCONTEXT_T)
 
 # *** LIBRARY CHECKS ***
 
+if (UNIX)
+    include (CheckLibraryExists)
+    CHECK_LIBRARY_EXISTS(rt clock_gettime "time.h" HAVE_CLOCK_GETTIME)
+    if(NOT HAVE_CLOCK_GETTIME)
+        message(FATAL_ERROR "clock_gettime not found")
+    else(NOT HAVE_CLOCK_GETTIME)
+        list(APPEND ZM_BIN_LIBS "-lrt")
+    endif(NOT HAVE_CLOCK_GETTIME)
+endif(UNIX)
+
 # zlib
 find_package(ZLIB)
 if(ZLIB_FOUND)
@@ -705,6 +715,10 @@ configure_file(zm.conf.in "${CMAKE_CURRENT_BINARY_DIR}/zm.conf" @ONLY)
 configure_file(zoneminder-config.cmake "${CMAKE_CURRENT_BINARY_DIR}/config.h" @ONLY)
 configure_file(zmconfgen.pl.in "${CMAKE_CURRENT_BINARY_DIR}/zmconfgen.pl" @ONLY)
 configure_file(zmlinkcontent.sh.in "${CMAKE_CURRENT_BINARY_DIR}/zmlinkcontent.sh" @ONLY)
+
+# Create a target for man pages
+include(Pod2Man)
+ADD_MANPAGE_TARGET()
 
 # Process subdirectories
 add_subdirectory(src)

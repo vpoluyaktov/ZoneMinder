@@ -725,8 +725,8 @@ void LocalCamera::Initialise()
             Fatal( "Failed to get video format: %s", strerror(errno) );
 
         Debug( 4, " v4l2_data.fmt.type = %08x",  v4l2_data.fmt.type );
-        Debug( 4, " v4l2_data.fmt.fmt.pix.width = %08x",  v4l2_data.fmt.fmt.pix.width );
-        Debug( 4, " v4l2_data.fmt.fmt.pix.height = %08x",  v4l2_data.fmt.fmt.pix.height );
+        Debug( 4, " v4l2_data.fmt.fmt.pix.width = %08x %d",  v4l2_data.fmt.fmt.pix.width, v4l2_data.fmt.fmt.pix.width );
+        Debug( 4, " v4l2_data.fmt.fmt.pix.height = %08x %d",  v4l2_data.fmt.fmt.pix.height, v4l2_data.fmt.fmt.pix.height );
         Debug( 4, " v4l2_data.fmt.fmt.pix.pixelformat = %08x",  v4l2_data.fmt.fmt.pix.pixelformat );
         Debug( 4, " v4l2_data.fmt.fmt.pix.field = %08x",  v4l2_data.fmt.fmt.pix.field );
         Debug( 4, " v4l2_data.fmt.fmt.pix.bytesperline = %08x",  v4l2_data.fmt.fmt.pix.bytesperline );
@@ -738,9 +738,14 @@ void LocalCamera::Initialise()
         v4l2_data.fmt.fmt.pix.width = width; 
         v4l2_data.fmt.fmt.pix.height = height;
         v4l2_data.fmt.fmt.pix.pixelformat = palette;
+        Debug( 4, " New v4l2_data.fmt.type = %08x",  v4l2_data.fmt.type );
+        Debug( 4, " New v4l2_data.fmt.fmt.pix.width = %08x %d",  v4l2_data.fmt.fmt.pix.width, v4l2_data.fmt.fmt.pix.width );
+        Debug( 4, " New v4l2_data.fmt.fmt.pix.height = %08x %d",  v4l2_data.fmt.fmt.pix.height, v4l2_data.fmt.fmt.pix.height );
+        Debug( 4, " New v4l2_data.fmt.fmt.pix.pixelformat = %08x",  v4l2_data.fmt.fmt.pix.pixelformat );
 
 	if ( (extras & 0xff) != 0 )
 	{
+        Debug( 4, " Setting extras v4l2_data.fmt.fmt.pix.field = %08x", extras & 0xff );
 		v4l2_data.fmt.fmt.pix.field = (v4l2_field)(extras & 0xff);
 		
 		if ( vidioctl( vid_fd, VIDIOC_S_FMT, &v4l2_data.fmt ) < 0 )
@@ -751,7 +756,7 @@ void LocalCamera::Initialise()
 				Fatal( "Failed to set video format: %s", strerror(errno) );
 			}
 		}
-	} else {        
+	} else {
 		if ( vidioctl( vid_fd, VIDIOC_S_FMT, &v4l2_data.fmt ) < 0 ) {
 			Fatal( "Failed to set video format: %s", strerror(errno) );
 		}
@@ -779,6 +784,7 @@ void LocalCamera::Initialise()
 
 	v4l2_jpegcompression jpeg_comp;
 	if(palette == V4L2_PIX_FMT_JPEG || palette == V4L2_PIX_FMT_MJPEG) {
+Debug(4, "Using JPEG, getting options");
 		if( vidioctl( vid_fd, VIDIOC_G_JPEGCOMP, &jpeg_comp ) < 0 ) {
 			if(errno == EINVAL) {
 				Debug(2, "JPEG compression options are not available");
@@ -830,7 +836,6 @@ void LocalCamera::Initialise()
 
         v4l2_data.reqbufs.type = v4l2_data.fmt.type;
         v4l2_data.reqbufs.memory = V4L2_MEMORY_MMAP;
-		Debug( 3, "Request buffers count is %d", v4l2_data.reqbufs.count );
 
         if ( vid_cap.capabilities & V4L2_CAP_STREAMING ) {
 			if ( vidioctl( vid_fd, VIDIOC_REQBUFS, &v4l2_data.reqbufs ) < 0 )
@@ -853,6 +858,7 @@ void LocalCamera::Initialise()
 		} // end if Streaming
 			v4l2_data.buffers = new V4L2MappedBuffer[v4l2_data.reqbufs.count];
 #if HAVE_LIBSWSCALE
+Debug(3, "Have swscale");
         capturePictures = new AVFrame *[v4l2_data.reqbufs.count];
 #endif // HAVE_LIBSWSCALE
         for ( unsigned int i = 0; i < v4l2_data.reqbufs.count; i++ )
@@ -1997,7 +2003,7 @@ int LocalCamera::PrimeCapture()
         }
         v4l2_data.bufptr = NULL;
 
-        Debug( 3, "Starting video stream" );
+        Debug( 3, "Starting video stream type: %d", v4l2_data.fmt.type );
         //enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         //enum v4l2_buf_type type = v4l2_data.fmt.type;
         enum v4l2_buf_type type = (v4l2_buf_type)v4l2_data.fmt.type;

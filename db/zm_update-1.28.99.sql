@@ -336,7 +336,7 @@ SET @s = (SELECT IF(
     AND column_name = 'Id'
     ) > 0,
 "SELECT 'Column Id exists in States'",
-"ALTER TABLE States DROP PRIMARY KEY;ALTER TABLE `States` ADD `Id` int(10) unsigned auto_increment NOT NULL PRIMARY KEY FIRST"
+"ALTER TABLE States DROP PRIMARY KEY, ADD `Id` int(10) unsigned auto_increment NOT NULL PRIMARY KEY FIRST"
 ));
 
 PREPARE stmt FROM @s;
@@ -371,24 +371,6 @@ SET @s = (SELECT IF(
   `State_Id`    int(10) unsigned,
   PRIMARY KEY (`Id`)
 )"
-));
-
-PREPARE stmt FROM @s;
-EXECUTE stmt;
-
---
--- Add ServerId column to Monitors
---
-
-SET @s = (SELECT IF(
-    (SELECT COUNT(*)
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE table_name = 'Monitors'
-    AND table_schema = DATABASE()
-    AND column_name = 'ServerId'
-    ) > 0,
-"SELECT 'Column ServerId exists in Monitors'",
-"ALTER TABLE Monitors ADD `ServerId` int(10) unsigned AFTER `Name`"
 ));
 
 PREPARE stmt FROM @s;

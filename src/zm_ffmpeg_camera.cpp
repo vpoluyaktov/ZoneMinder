@@ -317,7 +317,7 @@ int FfmpegCamera::OpenFfmpeg() {
 		}
         if(mAudioStreamId == -1) //FIXME best way to copy all other streams?
         {
-#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(51,2,1)
+#if (LIBAVCODEC_VERSION_CHECK(52, 64, 0, 64, 0) || LIBAVUTIL_VERSION_CHECK(50, 14, 0, 14, 0))
 		    if ( mFormatContext->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO )
 #else
 		    if ( mFormatContext->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO )
@@ -392,11 +392,9 @@ int FfmpegCamera::OpenFfmpeg() {
     Fatal( "You must compile ffmpeg with the --enable-swscale option to use ffmpeg cameras" );
 #endif // HAVE_LIBSWSCALE
 
-    Info( "Primed capture from %s, video=%d, audio=%d", mPath.c_str(), mVideoStreamId, mAudioStreamId);
+    mCanCapture = true;
 
-	mCanCapture = true;
-
-    return( 0 );
+    return 0;
 }
 
 int FfmpegCamera::ReopenFfmpeg() {
@@ -496,7 +494,7 @@ int FfmpegCamera::CaptureAndRecord( Image &image, bool recording, char* event_fi
         void *retval = 0;
         int ret;
         
-        ret = pthread_tryjoin_np(mReopenThread, &retval);
+        ret = pthread_join(mReopenThread, &retval);
         if (ret != 0){
             Error("Could not join reopen thread.");
         }
@@ -540,7 +538,7 @@ int FfmpegCamera::CaptureAndRecord( Image &image, bool recording, char* event_fi
         Debug( 5, "Got packet from stream %d", packet.stream_index );
         if ( packet.stream_index == mVideoStreamId )
         {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(52, 25, 0)
+#if LIBAVCODEC_VERSION_CHECK(52, 23, 0, 23, 0)
 			if ( avcodec_decode_video2( mCodecContext, mRawFrame, &frameComplete, &packet ) < 0 )
 #else
 			if ( avcodec_decode_video( mCodecContext, mRawFrame, &frameComplete, packet.data, packet.size ) < 0 )

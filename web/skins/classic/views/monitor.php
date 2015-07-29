@@ -41,11 +41,18 @@ if ( isset($_REQUEST['tab']) )
 else
     $tab = "general";
 
+    if ( defined( 'ZM_SERVER_ID' ) ) {
+        $Server = dbFetchOne( 'SELECT * FROM Servers WHERE Id=?', NULL, array( ZM_SERVER_ID ) );
+    } else {
+        $Server = array();
+    }
+
 if ( ! empty($_REQUEST['mid']) ) {
     $monitor = dbFetchMonitor( $_REQUEST['mid'] );
     if ( ZM_OPT_X10 )
         $x10Monitor = dbFetchOne( 'SELECT * FROM TriggersX10 WHERE MonitorId = ?', NULL, array($_REQUEST['mid']) );
 } else {
+
     $nextId = getTableAutoInc( 'Monitors' );
     $monitor = array(
         'Id' => 0,
@@ -113,6 +120,7 @@ if ( ! empty($_REQUEST['mid']) ) {
 		'ServerHost' => ZM_SERVER_HOST,
 		'V4LMultiBuffer'	=>	'',
 		'V4LCapturesPerFrame'	=>	1,
+		'ServerId'	=>	$Server['Id'],
     );
 }
 
@@ -496,6 +504,7 @@ if ( $tab != 'general' )
 ?>
         <input type="hidden" name="newMonitor[Name]" value="<?php echo validHtmlStr($newMonitor['Name']) ?>"/>
         <input type="hidden" name="newMonitor[ServerHost]" value="<?php echo validHtmlStr($newMonitor['ServerHost']) ?>"/>
+        <input type="hidden" name="newMonitor[ServerId]" value="<?php echo validHtmlStr($newMonitor['ServerId']) ?>"/>
         <input type="hidden" name="newMonitor[Type]" value="<?php echo validHtmlStr($newMonitor['Type']) ?>"/>
         <input type="hidden" name="newMonitor[Function]" value="<?php echo validHtmlStr($newMonitor['Function']) ?>"/>
         <input type="hidden" name="newMonitor[Enabled]" value="<?php echo validHtmlStr($newMonitor['Enabled']) ?>"/>
@@ -645,6 +654,13 @@ switch ( $tab )
 ?>
             <tr><td><?php echo translate('Name') ?></td><td><input type="text" name="newMonitor[Name]" value="<?php echo validHtmlStr($newMonitor['Name']) ?>" size="16"/></td></tr>
             <tr><td><?php echo translate('ServerHost') ?></td><td><input type="text" name="newMonitor[ServerHost]" value="<?php echo validHtmlStr($newMonitor['ServerHost']) ?>" size="16"/></td></tr>
+            <tr><td><?php echo translate('Server') ?></td><td>
+<?php 
+	$servers = dbFetchAssoc( 'SELECT Id,Name FROM Servers ORDER BY Name', 'Id', 'Name' ); 
+	array_unshift( $servers, 'None' );
+?>
+	<?php echo buildSelect( "newMonitor[ServerId]", $servers ); ?>
+</td></tr>
             <tr><td><?php echo translate('SourceType') ?></td><td><?php echo buildSelect( "newMonitor[Type]", $sourceTypes ); ?></td></tr>
             <tr><td><?php echo translate('Function') ?></td><td><select name="newMonitor[Function]">
 <?php
@@ -830,9 +846,9 @@ switch ( $tab )
     }
     case 'storage'   :
 ?>
-            <tr><td>Save as JPEGs</td><td><select name="newMonitor[SaveJPEGs]"><?php foreach ( $savejpegopts as $name => $value ) { ?><option value="<?php echo $value ?>"<?php if ( $value == $newMonitor['SaveJPEGs'] ) { ?> selected="selected"<?php } ?>><?php echo $name ?></option><?php } ?></select></td></tr>
-            <tr><td>Video writer</td><td><select name="newMonitor[VideoWriter]"><?php foreach ( $videowriteropts as $name => $value ) { ?><option value="<?php echo $value ?>"<?php if ( $value == $newMonitor['VideoWriter'] ) { ?> selected="selected"<?php } ?>><?php echo $name ?></option><?php } ?></select></td></tr>
-            <tr><td>Optional encoder parameters</td><td><textarea name="newMonitor[EncoderParameters]" rows="4" cols="36"><?php echo validHtmlStr($newMonitor['EncoderParameters']) ?></textarea></td></tr>
+            <tr><td>translate('SaveJPEGs')</td><td><select name="newMonitor[SaveJPEGs]"><?php foreach ( $savejpegopts as $name => $value ) { ?><option value="<?php echo $value ?>"<?php if ( $value == $newMonitor['SaveJPEGs'] ) { ?> selected="selected"<?php } ?>><?php echo $name ?></option><?php } ?></select></td></tr>
+            <tr><td>translate('VideoWriter')</td><td><select name="newMonitor[VideoWriter]"><?php foreach ( $videowriteropts as $name => $value ) { ?><option value="<?php echo $value ?>"<?php if ( $value == $newMonitor['VideoWriter'] ) { ?> selected="selected"<?php } ?>><?php echo $name ?></option><?php } ?></select></td></tr>
+            <tr><td>translate('OptionalEncoderParam')</td><td><textarea name="newMonitor[EncoderParameters]" rows="4" cols="36"><?php echo validHtmlStr($newMonitor['EncoderParameters']) ?></textarea></td></tr>
 <?php
         break;
     case 'timestamp' :

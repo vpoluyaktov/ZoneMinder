@@ -27,6 +27,7 @@
 #include <getopt.h>
 #include <arpa/inet.h>
 #include <glob.h>
+#include <sys/stat.h>
 
 #include "zm.h"
 #include "zm_db.h"
@@ -1348,7 +1349,10 @@ bool EventStream::sendFrame( int delta_us )
   static struct stat filestat;
   FILE *fdj = NULL;
   
-  snprintf( filepath, sizeof(filepath), Event::capture_file_format, event_data->path, curr_frame_id );
+  snprintf( filepath, sizeof(filepath), Event::analyse_file_format, event_data->path, curr_frame_id );
+  if (stat(filepath, &filestat) < 0) { 
+    snprintf( filepath, sizeof(filepath), Event::capture_file_format, event_data->path, curr_frame_id );
+  }
 
 #if HAVE_LIBAVCODEC
   if ( type == STREAM_MPEG )

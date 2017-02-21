@@ -34,6 +34,25 @@ $eventCounts = array(
         "filter" => array(
             "terms" => array(
                 array( "attr" => "DateTime", "op" => ">=", "val" => "-1 hour" ),
+                array( "cnj" => "and", "attr" => "AlarmFrames", "op" => ">", "val" => "0" )
+            )
+        ),
+    ),
+    array(
+        "title" => translate('4 Hours'),
+        "filter" => array(
+            "terms" => array(
+                array( "attr" => "DateTime", "op" => ">=", "val" => "-4 hour" ),
+                array( "cnj" => "and", "attr" => "AlarmFrames", "op" => ">", "val" => "0" )
+            )
+        ),
+    ),
+    array(
+        "title" => translate('12 Hours'),
+        "filter" => array(
+            "terms" => array(
+                array( "attr" => "DateTime", "op" => ">=", "val" => "-12 hour" ),
+                array( "cnj" => "and", "attr" => "AlarmFrames", "op" => ">", "val" => "0" )
             )
         ),
     ),
@@ -42,6 +61,7 @@ $eventCounts = array(
         "filter" => array(
             "terms" => array(
                 array( "attr" => "DateTime", "op" => ">=", "val" => "-1 day" ),
+                array( "cnj" => "and", "attr" => "AlarmFrames", "op" => ">", "val" => "0" )
             )
         ),
     ),
@@ -50,6 +70,7 @@ $eventCounts = array(
         "filter" => array(
             "terms" => array(
                 array( "attr" => "DateTime", "op" => ">=", "val" => "-7 day" ),
+                array( "cnj" => "and", "attr" => "AlarmFrames", "op" => ">", "val" => "0" )
             )
         ),
     ),
@@ -58,6 +79,7 @@ $eventCounts = array(
         "filter" => array(
             "terms" => array(
                 array( "attr" => "DateTime", "op" => ">=", "val" => "-1 month" ),
+                array( "cnj" => "and", "attr" => "AlarmFrames", "op" => ">", "val" => "0" )
             )
         ),
     ),

@@ -113,3 +113,15 @@ web/tools/mootools/mootools-more.js
 zm.conf
 zmconfgen.pl
 zmlinkcontent.sh
+
+
+
+scripts/*.8
+scripts/*.8.gz
+src/*.8
+src/*.8.gz
+install_manifest.txt
+src/nph-zms
+zm_conf.cmake
+.gitignore
+analyzis_images_enable.patch

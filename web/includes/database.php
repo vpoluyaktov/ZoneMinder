@@ -33,7 +33,7 @@ function dbConnect()
 	if (strpos(ZM_DB_HOST, ':')) {
 		// Host variable may carry a port or socket.
 		list($host, $portOrSocket) = explode(':', ZM_DB_HOST, 2);
-			if (is_numeric($portOrSocket)) {
+			if (ctype_digit($portOrSocket)) {
 				$socket = ':host='.$host . ';port='.$portOrSocket;
 			} else {
 				$socket = ':unix_socket='.$portOrSocket;
@@ -44,6 +44,7 @@ function dbConnect()
 
 	try {
 		$dbConn = new PDO( ZM_DB_TYPE . $socket . ';dbname='.ZM_DB_NAME, ZM_DB_USER, ZM_DB_PASS );
+		$dbConn->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
 		$dbConn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	} catch(PDOException $ex ) {
 		echo "Unable to connect to ZM db." . $ex->getMessage();

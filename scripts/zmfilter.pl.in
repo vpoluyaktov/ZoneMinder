@@ -307,7 +307,7 @@ $dbh->ping();
         }
         if ( $filter->{AutoExecute} )
         {
-            if ( !$event->{Execute} )
+            if ( !$event->{Executed} )
             {
                 $delete_ok = undef if ( !executeCommand( $filter, $event ) );
             }
@@ -1039,6 +1039,7 @@ sub executeCommand
 
     my $command = $filter->{AutoExecuteCmd};
     $command .= " $event_path";
+    $command = substituteTags( $command, $filter, $event );
 
     Info( "Executing '$command'\n" );
     my $output = qx($command);
